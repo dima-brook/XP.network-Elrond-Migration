@@ -6,14 +6,15 @@ use ink_lang as ink;
 mod freezer {
     use sp_core::{H160};
 
-    /// Defines the storage of your contract.
-    /// Add new fields to the below struct in order
-    /// to add new static storage fields to your contract.
+    /// Contract Storage
+    /// Stores a list of validators
     #[ink(storage)]
     pub struct Freezer {
         validators: ink_storage::collections::HashMap<AccountId, ()>, // O(1) contains
     }
 
+    /// Transfer to elrond chain event
+    /// validators must subscribe to this
     #[ink(event)]
     pub struct Transfer {
         to: [u8; 20],
@@ -26,6 +27,9 @@ mod freezer {
             Self { validators: Default::default() }
         }
 
+        /// Emit a transfer event while locking
+        /// existing coins
+        /// TODO: Support Xpub instead of h160
         #[ink(message)]
         #[ink(payable)]
         pub fn send(&mut self, to: [u8; 20]) {
@@ -36,6 +40,8 @@ mod freezer {
             } )
         }
 
+        /// unfreeze tokens and send them to an address
+        /// only validators can call this
         #[ink(message)]
         pub fn pop(&mut self, to: AccountId, value: Balance) -> Result<bool, ()> {
             if self.validators.get(&self.env().caller()).is_some() {
@@ -46,12 +52,16 @@ mod freezer {
             }
         }
 
+        /// Subscribe to events & become a validator
+        /// TODO: Proper implementation
         #[ink(message)]
         #[ink(payable)]
         pub fn subscribe(&mut self) {
             self.validators.insert(self.env().caller(), ());
         }
 
+        /// Number of validators
+        /// only for debugging
         fn validator_cnt(&mut self) -> u32 {
             self.validators.len()
         }
@@ -68,14 +78,14 @@ mod freezer {
         /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
 
-        /// We test if the default constructor does its job.
+        /// Check default impl 
         #[ink::test]
         fn default_works() {
             let mut freezer = Freezer::default();
             assert_eq!(freezer.validator_cnt(), 0);
         }
 
-        /// We test a simple use case of our contract.
+        /// Check if validators can be added
         #[ink::test]
         fn subscribe_test() {
             let mut freezer = Freezer::default();
@@ -93,6 +103,7 @@ mod freezer {
             assert_eq!(evs[0].value, 0);
         }*/ // TODO: Fix this test
 
+        /// Check if validators can pop transactions properly
         #[ink::test]
         fn pop() {
             let mut freezer = Freezer::default();
