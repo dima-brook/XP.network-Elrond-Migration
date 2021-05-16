@@ -17,7 +17,7 @@ mod freezer {
     #[ink(event)]
     pub struct Transfer {
         to: [u8; 20],
-        value: [u8; core::mem::size_of::<Balance>()]
+        value: Balance
     }
 
     impl Freezer {
@@ -32,7 +32,7 @@ mod freezer {
             let h160 = H160::from_slice(&to);
             self.env().emit_event( Transfer {
                 to: h160.to_fixed_bytes(),
-                value: self.env().transferred_balance().to_be_bytes()
+                value: self.env().transferred_balance()
             } )
         }
 
@@ -51,7 +51,7 @@ mod freezer {
         #[ink(message)]
         #[ink(payable)]
         pub fn subscribe(&mut self) {
-            self.validators.insert(self.env.caller(), ());
+            self.validators.insert(self.env().caller(), ());
         }
 
         fn validator_cnt(&mut self) -> u32 {
@@ -80,7 +80,7 @@ mod freezer {
         /// We test a simple use case of our contract.
         #[ink::test]
         fn it_works() {
-            assert_eq!(freezer.get().validato, true);
+            assert_eq!(freezer.get().validaton, true);
         }
     }
 }
