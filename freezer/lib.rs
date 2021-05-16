@@ -37,14 +37,12 @@ mod freezer {
         }
 
         #[ink(message)]
-        pub fn pop(&mut self, to: AccountId, value: Balance) -> bool {
+        pub fn pop(&mut self, to: AccountId, value: Balance) -> Result<bool, ()> {
             if self.validators.get(&self.env().caller()).is_some() {
-                if let Err(_) = self.env().transfer(to, value) {
-                    return false; // TODO: Nuke validator on fail
-                }
-                true
+                self.env().transfer(to, value).map_err(|_| ())?; // TODO: Return concrete error
+                Ok(true)
             } else {
-                false
+                Ok(false)
             }
         }
 
@@ -73,14 +71,37 @@ mod freezer {
         /// We test if the default constructor does its job.
         #[ink::test]
         fn default_works() {
-            let freezer = Freezer::default();
-            assert_eq(freezer.validator_cnt(), 0);
+            let mut freezer = Freezer::default();
+            assert_eq!(freezer.validator_cnt(), 0);
         }
 
         /// We test a simple use case of our contract.
         #[ink::test]
-        fn it_works() {
-            assert_eq!(freezer.get().validaton, true);
+        fn subscribe_test() {
+            let mut freezer = Freezer::default();
+            freezer.subscribe();
+            assert_eq!(freezer.validator_cnt(), 1);
+        }
+
+/*        #[ink::test]
+        fn send_test() {
+            let freezer = Freezer::default();
+            let addr = H160::from_str("0xerd1yflgh7duhhvpkqkqqjrcnz7j6pqnhy8kepglkk6k8h8dfu3as3ysdcxan8");
+            freezer.send(addr.clone().to_fixed_bytes());
+            let evs = ink_env::test::recorded_events().collect::<Vec<_>>();
+            assert_eq!(evs.len(), 1);
+            assert_eq!(evs[0].value, 0);
+        }*/ // TODO: Fix this test
+
+        #[ink::test]
+        fn pop() {
+            let mut freezer = Freezer::default();
+            let acc = [0; 32];
+            assert_eq!(freezer.pop(acc.clone().into(), 0x0), Ok(false));
+
+            freezer.subscribe();
+            assert_eq!(freezer.pop(acc.clone().into(), 0x0), Ok(true));
+            assert_eq!(freezer.pop(acc.clone().into(), 1).is_err(), true);
         }
     }
 }
