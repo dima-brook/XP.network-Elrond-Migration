@@ -4,8 +4,6 @@ use ink_lang as ink;
 
 #[ink::contract]
 mod freezer {
-    use sp_core::{H160};
-
     /// Contract Storage
     /// Stores a list of validators
     #[ink(storage)]
@@ -17,7 +15,7 @@ mod freezer {
     /// validators must subscribe to this
     #[ink(event)]
     pub struct Transfer {
-        to: [u8; 20],
+        to: AccountId,
         value: Balance
     }
 
@@ -29,13 +27,12 @@ mod freezer {
 
         /// Emit a transfer event while locking
         /// existing coins
-        /// TODO: Support Xpub instead of h160
+        /// TODO: Support Xpub
         #[ink(message)]
         #[ink(payable)]
-        pub fn send(&mut self, to: [u8; 20]) {
-            let h160 = H160::from_slice(&to);
+        pub fn send(&mut self, to: AccountId) {
             self.env().emit_event( Transfer {
-                to: h160.to_fixed_bytes(),
+                to,
                 value: self.env().transferred_balance()
             } )
         }
