@@ -2,15 +2,15 @@
   "name": "validator",
   "version": "1.0.0",
   "description": "XP Freeze validator and elrond minter",
-  "main": "build/main/index.js",
-  "typings": "build/main/index.d.ts",
+  "main": "build/main/main.js",
+  "typings": "build/main/main.d.ts",
   "module": "build/module/index.js",
   "repository": "https://github.com/xp-network/XP.network-Elrond-Migration",
   "license": "MIT",
   "keywords": [],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "npm run build && node build/main/index.js"
+    "dev": "npm run build && node build/main/main.js"
   },
   "engines": {
     "node": ">=10"

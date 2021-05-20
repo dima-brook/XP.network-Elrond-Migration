@@ -1,6 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { ContractPromise } from '@polkadot/api-contract';
-import { Event } from '@polkadot/types/interfaces';
 
 import { ConcreteJson } from './types';
 

@@ -5,7 +5,7 @@ import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from "./polkadot"
 import { ConcreteJson } from "./types"
 
-// TODO: Console args
+
 const main = async () => {
     const args = yargs.options({
         xnode: {
