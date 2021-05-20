@@ -27,7 +27,7 @@ mod freezer {
 
         /// Emit a transfer event while locking
         /// existing coins
-        /// TODO: Support Xpub
+        /// TODO: Support elrond addr
         #[ink(message)]
         #[ink(payable)]
         pub fn send(&mut self, to: AccountId) {
@@ -90,15 +90,14 @@ mod freezer {
             assert_eq!(freezer.validator_cnt(), 1);
         }
 
-/*        #[ink::test]
+        #[ink::test]
         fn send_test() {
-            let freezer = Freezer::default();
-            let addr = H160::from_str("0xerd1yflgh7duhhvpkqkqqjrcnz7j6pqnhy8kepglkk6k8h8dfu3as3ysdcxan8");
-            freezer.send(addr.clone().to_fixed_bytes());
+            let mut freezer = Freezer::default();
+            let addr = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>().unwrap().alice;
+            freezer.send(addr);
             let evs = ink_env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(evs.len(), 1);
-            assert_eq!(evs[0].value, 0);
-        }*/ // TODO: Fix this test
+        }
 
         /// Check if validators can pop transactions properly
         #[ink::test]
