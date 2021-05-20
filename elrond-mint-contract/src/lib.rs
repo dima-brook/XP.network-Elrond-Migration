@@ -188,6 +188,21 @@ pub trait Multisig {
 		self.validate_action(Action::ChangeMinValid(new_quorum))
 	}
 
+
+	#[endpoint(validateSendXp)]
+	fn validate_send_xp(
+		&self,
+		to: Address,
+		amount: BigUint,
+		#[var_args] opt_data: OptionalArg<BoxedBytes>,
+	) -> SCResult<usize> {
+		let data = match opt_data {
+			OptionalArg::Some(data) => data,
+			OptionalArg::None => BoxedBytes::empty(),
+		};
+		self.validate_action(Action::SendXP { to, amount, data })
+	}
+
 		/// Can be used to:
 	/// - create new user (board member / proposer)
 	/// - remove user (board member / proposer)
