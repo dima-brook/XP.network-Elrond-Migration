@@ -1,41 +1,43 @@
 import {
     Account,
     Address,
+    AddressValue,
     ContractFunction,
     ISigner,
     NetworkConfig,
     ProxyProvider,
-    TokenIdentifierValue,
     Transaction,
     TransactionPayload,
     U32Value,
     UserSecretKey,
     UserSigner,
 } from '@elrondnetwork/erdjs';
-import { ElrondTokenIdent } from './consts';
 
 export type ElrondHelper = {
     readonly provider: ProxyProvider;
     readonly sender: Account;
     readonly signer: ISigner;
+    readonly mintContract: Address;
 };
 
 export async function newHelper(
     node_uri: string,
     secret_key: Buffer,
-    sender: string
+    sender: string,
+    minter: string
 ): Promise<ElrondHelper> {
     const provider = new ProxyProvider(node_uri);
     await NetworkConfig.getDefault().sync(provider);
     const eMinterAddr = new Address(sender);
-    const minter = new Account(eMinterAddr);
+    const senderac = new Account(eMinterAddr);
     const signer = new UserSigner(new UserSecretKey(secret_key)); // TODO
-    await minter.sync(provider);
+    await senderac.sync(provider);
 
     return {
         provider: provider,
-        sender: minter,
+        sender: senderac,
         signer: signer,
+        mintContract: new Address(minter)
     };
 }
 
@@ -45,11 +47,12 @@ export async function verifyEmitMint(
     value: number
 ): Promise<Transaction> {
     const tx = new Transaction({
-        receiver: new Address(to),
+        receiver: helper.mintContract,
         nonce: helper.sender.nonce,
+        // fn validate_send_xp(to: Address, amount: BigUint, #[var_args] opt_data: OptionalArg<BoxedBytes>,)
         data: TransactionPayload.contractCall()
-            .setFunction(new ContractFunction('mint'))
-            .addArg(new TokenIdentifierValue(Buffer.from(ElrondTokenIdent)))
+            .setFunction(new ContractFunction('validateSendXp'))
+            .addArg(new AddressValue(new Address(to)))
             .addArg(new U32Value(value))
             .build(),
     });

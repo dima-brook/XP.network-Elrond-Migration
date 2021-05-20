@@ -31,6 +31,12 @@ const main = async () => {
             type: 'string',
             description: 'elrond sender address',
         },
+        minter: {
+            alias: 'm',
+            demandOption: true,
+            type: 'string',
+            description: 'elrond minter contract address',
+        },
         freezer: {
             alias: 'f',
             demandOption: true,
@@ -47,7 +53,8 @@ const main = async () => {
     const elrd = await elrond.newHelper(
         args.enode,
         Buffer.from(args.privk),
-        args.sender
+        args.sender,
+        args.minter
     );
 
     polka.api.query.system.events((events) => {
