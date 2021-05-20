@@ -19,11 +19,14 @@
     "@bitauth/libauth": "^1.17.1",
     "@elrondnetwork/erdjs": "^5.0.0",
     "@polkadot/api": "^4.10.1",
-    "@polkadot/api-contract": "^4.10.1"
+    "@polkadot/api-contract": "^4.10.1",
+    "@polkadot/types": "^4.10.1",
+    "yargs": "^17.0.1"
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/yargs": "^16.0.2",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "ava": "^3.12.1",
