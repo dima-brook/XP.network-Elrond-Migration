@@ -60,7 +60,7 @@ const main = async () => {
             // Not our contract
             if (
                 event.data[0].toString() !=
-                '5ELGpadREtMnZvf1cP3V8wiENs8htZaRepFuaAQi8PY7cUcd'
+                args.freezer
             ) {
                 return;
             }
