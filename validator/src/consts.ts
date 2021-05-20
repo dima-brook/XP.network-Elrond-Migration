@@ -1,1 +1,1 @@
-export const ElrondTokenIdent = "XPN-sdad";
+export const ElrondTokenIdent = 'XPN-sdad';
