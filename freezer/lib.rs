@@ -1,9 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
+extern crate alloc;
 
 #[ink::contract]
 mod freezer {
+    use bech32;
+    use alloc::string::String;
+
     /// Contract Storage
     /// Stores a list of validators
     #[ink(storage)]
@@ -15,7 +19,7 @@ mod freezer {
     /// validators must subscribe to this
     #[ink(event)]
     pub struct Transfer {
-        to: AccountId,
+        to: String,
         value: Balance
     }
 
@@ -30,22 +34,24 @@ mod freezer {
         /// TODO: Support elrond addr
         #[ink(message)]
         #[ink(payable)]
-        pub fn send(&mut self, to: AccountId) {
+        pub fn send(&mut self, to: String) {
+            bech32::decode(&to).unwrap();
+            let val = self.env().transferred_balance();
+            if val == 0 {
+                panic!("Value must be > 0!")
+            }
             self.env().emit_event( Transfer {
                 to,
-                value: self.env().transferred_balance()
+                value: val,
             } )
         }
 
         /// unfreeze tokens and send them to an address
         /// only validators can call this
         #[ink(message)]
-        pub fn pop(&mut self, to: AccountId, value: Balance) -> Result<bool, ()> {
+        pub fn pop(&mut self, to: AccountId, value: Balance) {
             if self.validators.get(&self.env().caller()).is_some() {
-                self.env().transfer(to, value).map_err(|_| ())?; // TODO: Return concrete error
-                Ok(true)
-            } else {
-                Ok(false)
+                self.env().transfer(to, value).unwrap(); // TODO: Return concrete error
             }
         }
 
@@ -94,7 +100,7 @@ mod freezer {
         fn send_test() {
             let mut freezer = Freezer::default();
             let addr = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>().unwrap().alice;
-            freezer.send(addr);
+            freezer.send(addr.to_string());
             let evs = ink_env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(evs.len(), 1);
         }

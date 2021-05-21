@@ -10,6 +10,7 @@ ink_metadata = { version = "3.0.0-rc3", default-features = false, features = ["d
 ink_env = { version = "3.0.0-rc3", default-features = false }
 ink_storage = { version = "3.0.0-rc3", default-features = false }
 ink_lang = { version = "3.0.0-rc3", default-features = false }
+bech32 = { version = "0.8.0", git = "https://github.com/rust-bitcoin/rust-bech32", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "0.6.0", default-features = false, features = ["derive"], optional = true }
@@ -32,6 +33,7 @@ std = [
     "ink_primitives/std",
     "scale/std",
     "scale-info/std",
-	"sp-core/std"
+	"sp-core/std",
+	"bech32/std"
 ]
 ink-as-dependency = []
