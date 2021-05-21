@@ -7,7 +7,7 @@ use elrond_wasm::{
 
 elrond_wasm::derive_imports!();
 
-#[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+#[derive(Clone, NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
 pub enum Action<BigUint: BigUintApi> {
 	Nothing,
 	AddValidator(Address),

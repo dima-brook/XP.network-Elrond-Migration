@@ -30,29 +30,12 @@ pub trait Multisig {
 	#[storage_mapper("num_validators")]
 	fn num_validators(&self) -> SingleValueMapper<Self::Storage, usize>;
 
-
+	/// Action: SignCnt
 	#[storage_mapper("action_data")]
-	fn action_mapper(&self) -> VecMapper<Self::Storage, Action<Self::BigUint>>;
+	fn action_mapper(&self) -> MapMapper<Self::Storage, Action<Self::BigUint>, Vec<usize>>;
 
-	/// The index of the last proposed action.
-	/// 0 means that no action was ever proposed yet.
-	#[view(getActionLastIndex)]
-	fn get_action_last_index(&self) -> usize {
-		self.action_mapper().len()
-	}
-
-	/// Serialized action data of an action with index.
-	#[view(getActionData)]
-	fn get_action_data(&self, action_id: usize) -> Action<Self::BigUint> {
-		self.action_mapper().get(action_id)
-	}
-
-	#[storage_mapper("action_signer_ids")]
-	fn action_signer_ids(&self, action_id: usize) -> SingleValueMapper<Self::Storage, Vec<usize>>;
-
-	fn clear_action(&self, action_id: usize) {
-		self.action_mapper().clear_entry_unchecked(action_id);
-		self.action_signer_ids(action_id).clear();
+	fn clear_action(&self, action: &Action<Self::BigUint>) {
+		self.action_mapper().remove(action);
 	}
 
 	#[init]
@@ -82,17 +65,6 @@ pub trait Multisig {
 	#[endpoint]
 	fn deposit(&self) {}
 
-	#[view]
-	fn signed(&self, user: Address, action_id: usize) -> bool {
-		let user_id = self.user_mapper().get_user_id(&user);
-		if user_id == 0 {
-			false
-		} else {
-			let signer_ids = self.action_signer_ids(action_id).get();
-			signer_ids.contains(&user_id)
-		}
-	}
-
 	#[view(userRole)]
 	fn user_role(&self, user: Address) -> UserRole {
 		let user_id = self.user_mapper().get_user_id(&user);
@@ -103,7 +75,7 @@ pub trait Multisig {
 		}
 	}
 
-	fn validate_action(&self, action: Action<Self::BigUint>) -> SCResult<usize> {
+	fn validate_action(&self, action: Action<Self::BigUint>) -> SCResult<()> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
 		let caller_role = self.get_user_id_to_role(caller_id);
@@ -112,53 +84,54 @@ pub trait Multisig {
 			"only board members and proposers can propose"
 		);
 
+		let mut ret = false;
 		let mut action_mapper = self.action_mapper();
-		let action_id = action_mapper.push(&action);
+		let mut valid_signers_count = 0;
+		action_mapper
+			.entry(action.clone())
+			.or_insert_with(|| [].to_vec())
+			.update(|signers| {
+				if signers.contains(&caller_id) {
+					ret = true;
+					return;
+				}
 
-		let mut ret = true;
-		self.action_signer_ids(action_id).update(|signer_ids| {
-			if !signer_ids.contains(&caller_id) {
-				signer_ids.push(caller_id);
-				ret = false;
-			}
-		});
-		if ret {
-			return Ok(action_id);
-		}
+				signers.push(caller_id);
+				valid_signers_count = signers.len();
+			});
 
 		let min_valid = self.min_valid().get();
-		let valid_signers_count = self.get_action_valid_signer_count(action_id);
 
 		if valid_signers_count == min_valid {
 			let res = self.perform_action(action);
 			return if let Ok(_) = res {
-				Ok(action_id)
+				Ok(())
 			} else {
 				Err(res.err().unwrap())
 			};
 		} else if valid_signers_count > min_valid && valid_signers_count == self.num_validators().get() {
 			// clean up storage
-			self.clear_action(action_id);
+			self.clear_action(&action);
 		}
 	
-		Ok(action_id)
+		Ok(())
 	}
 
 	/// Initiates board member addition process.
 	/// Can also be used to promote a proposer to board member.
 	#[endpoint(proposeAddValidator)]
-	fn propose_add_validator(&self, board_member_address: Address) -> SCResult<usize> {
+	fn propose_add_validator(&self, board_member_address: Address) -> SCResult<()> {
 		self.validate_action(Action::AddValidator(board_member_address))
 	}
 
 	/// Removes user regardless of whether it is a board member or proposer.
 	#[endpoint(proposeRemoveUser)]
-	fn propose_remove_user(&self, user_address: Address) -> SCResult<usize> {
+	fn propose_remove_user(&self, user_address: Address) -> SCResult<()> {
 		self.validate_action(Action::RemoveUser(user_address))
 	}
 
 	#[endpoint(proposeChangeMinValid)]
-	fn propose_change_min_valid(&self, new_quorum: usize) -> SCResult<usize> {
+	fn propose_change_min_valid(&self, new_quorum: usize) -> SCResult<()> {
 		self.validate_action(Action::ChangeMinValid(new_quorum))
 	}
 
@@ -168,7 +141,7 @@ pub trait Multisig {
 		to: Address,
 		amount: Self::BigUint,
 		#[var_args] opt_data: OptionalArg<BoxedBytes>,
-	) -> SCResult<usize> {
+	) -> SCResult<()> {
 		let data = match opt_data {
 			OptionalArg::Some(data) => data,
 			OptionalArg::None => BoxedBytes::empty(),
@@ -202,44 +175,6 @@ pub trait Multisig {
 				self.num_validators().update(|val| *val += 1);
 			}
 		}
-	}
-
-	#[view(getActionSigners)]
-	fn get_action_signers(&self, action_id: usize) -> Vec<Address> {
-		self.action_signer_ids(action_id)
-			.get()
-			.iter()
-			.map(|signer_id| self.user_mapper().get_user_address_unchecked(*signer_id))
-			.collect()
-	}
-
-	#[view(getActionSignerCount)]
-	fn get_action_signer_count(&self, action_id: usize) -> usize {
-		self.action_signer_ids(action_id).get().len()
-	}
-
-	/// It is possible for board members to lose their role.
-	/// They are not automatically removed from all actions when doing so,
-	/// therefore the contract needs to re-check every time when actions are performed.
-	/// This function is used to validate the signers before performing an action.
-	/// It also makes it easy to check before performing an action.
-	#[view(getActionValidSignerCount)]
-	fn get_action_valid_signer_count(&self, action_id: usize) -> usize {
-		let signer_ids = self.action_signer_ids(action_id).get();
-		signer_ids
-			.iter()
-			.filter(|signer_id| {
-				let signer_role = self.get_user_id_to_role(**signer_id);
-				signer_role.can_sign()
-			})
-			.count()
-	}
-
-	#[view(quorumReached)]
-	fn quorum_reached(&self, action_id: usize) -> bool {
-		let min_valid = self.min_valid().get();
-		let valid_signers_count = self.get_action_valid_signer_count(action_id);
-		valid_signers_count >= min_valid
 	}
 
 	fn perform_action(&self, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
