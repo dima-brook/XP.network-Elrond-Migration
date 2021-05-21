@@ -8,8 +8,6 @@ use user_role::UserRole;
 
 elrond_wasm::imports!();
 
-const XPTOKEN_IDENT: &[u8] = b"XPNT-sdsd";
-
 #[elrond_wasm_derive::contract]
 pub trait Multisig {
 	#[storage_mapper("user")]
@@ -34,12 +32,15 @@ pub trait Multisig {
 	#[storage_mapper("action_data")]
 	fn action_mapper(&self) -> MapMapper<Self::Storage, Action<Self::BigUint>, Vec<usize>>;
 
+	#[storage_mapper("token")]
+	fn token(&self) -> SingleValueMapper<Self::Storage, BoxedBytes>;
+
 	fn clear_action(&self, action: &Action<Self::BigUint>) {
 		self.action_mapper().remove(action);
 	}
 
 	#[init]
-	fn init(&self, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
+	fn init(&self, token: BoxedBytes, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
 		require!(
 			!validators.is_empty(),
 			"validators cannot be empty on init, no-one would be able to propose"
@@ -58,6 +59,8 @@ pub trait Multisig {
 		require!(!duplicates, "duplicate board member");
 		self.num_validators().set(&validators.len());
 
+		self.token().set(&token);
+	
 		Ok(())
 	}
 
@@ -206,11 +209,12 @@ pub trait Multisig {
 				Ok(PerformActionResult::Nothing)
 			},
 			Action::SendXP { to, amount, data } => {
-				self.send().esdt_local_mint(self.blockchain().get_gas_left(), XPTOKEN_IDENT, &amount);
+				let token = self.token().get();
+				self.send().esdt_local_mint(self.blockchain().get_gas_left(), token.as_slice(), &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
-					token: XPTOKEN_IDENT.into(),
+					token: token.into(),
 					amount,
 					data
 				}))

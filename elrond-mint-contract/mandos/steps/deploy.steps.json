@@ -10,6 +10,7 @@
                 "value": "0",
                 "contractCode": "file:../../output/multisig.wasm",
                 "arguments": [
+                    "str:XPDT-abcdef",
                     "2",
                     "address:alice",
                     "address:bob",
@@ -88,7 +89,8 @@
                         "``user_role|u32:2": "1",
                         "``user_role|u32:3": "1",
                         "``num_validators": "3",
-                        "``min_valid": "2"
+                        "``min_valid": "2",
+                        "``token": "str:XPDT-abcdef"
                     },
                     "code": "file:../../output/multisig.wasm"
                 },
