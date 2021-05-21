@@ -14,9 +14,9 @@
             "txId": "change-quorum-propose",
             "tx": {
                 "from": "address:alice",
-                "to": "address:multisig",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "proposeChangeQuorum",
+                "function": "proposeChangeMinValid",
                 "arguments": [
                     "4"
                 ],
@@ -25,7 +25,6 @@
             },
             "expect": {
                 "out": [
-                    "1"
                 ],
                 "status": "",
                 "logs": [],
@@ -38,33 +37,11 @@
             "txId": "change-quorum-sign-bob",
             "tx": {
                 "from": "address:bob",
-                "to": "address:multisig",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "sign",
+                "function": "proposeChangeMinValid",
                 "arguments": [
-                    "1"
-                ],
-                "gasLimit": "100,000",
-                "gasPrice": "0"
-            },
-            "expect": {
-                "out": [],
-                "status": "",
-                "logs": [],
-                "gas": "*",
-                "refund": "*"
-            }
-        },
-        {
-            "step": "scCall",
-            "txId": "change-quorum-perform",
-            "tx": {
-                "from": "address:alice",
-                "to": "address:multisig",
-                "value": "0",
-                "function": "performAction",
-                "arguments": [
-                    "1"
+                    "4"
                 ],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
@@ -83,9 +60,9 @@
             "txId": "getQuorum",
             "tx": {
                 "from": "address:owner",
-                "to": "address:multisig",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "getQuorum",
+                "function": "getMinValid",
                 "arguments": [],
                 "gasLimit": "100,000",
                 "gasPrice": "0"

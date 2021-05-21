@@ -26,7 +26,7 @@ pub trait Multisig {
 	#[storage_set("user_role")]
 	fn set_user_id_to_role(&self, user_id: usize, user_role: UserRole);
 
-	#[view(getNumValdators)]
+	#[view(getNumValidators)]
 	#[storage_mapper("num_validators")]
 	fn num_validators(&self) -> SingleValueMapper<Self::Storage, usize>;
 
@@ -89,7 +89,7 @@ pub trait Multisig {
 		let mut valid_signers_count = 0;
 		action_mapper
 			.entry(action.clone())
-			.or_insert_with(|| [].to_vec())
+			.or_insert_with(|| Vec::with_capacity(self.num_validators().get()))
 			.update(|signers| {
 				if signers.contains(&caller_id) {
 					ret = true;

@@ -14,35 +14,11 @@
             "txId": "change-quorum-propose",
             "tx": {
                 "from": "address:alice",
-                "to": "address:multisig",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "proposeChangeQuorum",
+                "function": "proposeChangeMinValid",
                 "arguments": [
                     "3"
-                ],
-                "gasLimit": "100,000",
-                "gasPrice": "0"
-            },
-            "expect": {
-                "out": [
-                    "1"
-                ],
-                "status": "",
-                "logs": [],
-                "gas": "*",
-                "refund": "*"
-            }
-        },
-        {
-            "step": "scCall",
-            "txId": "change-quorum-sign-bob",
-            "tx": {
-                "from": "address:bob",
-                "to": "address:multisig",
-                "value": "0",
-                "function": "sign",
-                "arguments": [
-                    "1"
                 ],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
@@ -57,14 +33,14 @@
         },
         {
             "step": "scCall",
-            "txId": "change-quorum-perform",
+            "txId": "change-quorum-sign-bob",
             "tx": {
-                "from": "address:alice",
-                "to": "address:multisig",
+                "from": "address:bob",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "performAction",
+                "function": "proposeChangeMinValid",
                 "arguments": [
-                    "1"
+                    "3"
                 ],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
@@ -82,9 +58,9 @@
             "txId": "getQuorum",
             "tx": {
                 "from": "address:owner",
-                "to": "address:multisig",
+                "to": "address:elrond_mint_contract",
                 "value": "0",
-                "function": "getQuorum",
+                "function": "getMinValid",
                 "arguments": [],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
