@@ -3,11 +3,12 @@
 mod action;
 mod user_role;
 
-use action::Action;
+use action::{Action, PerformActionResult};
 use user_role::UserRole;
 
 elrond_wasm::imports!();
 
+const XPTOKEN_IDENT: &[u8] = b"XPNT-sdsd";
 
 #[elrond_wasm_derive::contract]
 pub trait Multisig {
@@ -111,10 +112,10 @@ pub trait Multisig {
 			"only board members and proposers can propose"
 		);
 
-		let action_mapper = self.action_mapper();
+		let mut action_mapper = self.action_mapper();
 		let action_id = action_mapper.push(&action);
 
-		let ret = true;
+		let mut ret = true;
 		self.action_signer_ids(action_id).update(|signer_ids| {
 			if !signer_ids.contains(&caller_id) {
 				signer_ids.push(caller_id);
@@ -129,7 +130,7 @@ pub trait Multisig {
 		let valid_signers_count = self.get_action_valid_signer_count(action_id);
 
 		if valid_signers_count == min_valid {
-			let res = self.perform_action(&action);
+			let res = self.perform_action(action);
 			return if let Ok(_) = res {
 				Ok(action_id)
 			} else {
@@ -241,14 +242,15 @@ pub trait Multisig {
 		valid_signers_count >= min_valid
 	}
 
-	fn perform_action(&self, action: &Action<Self::BigUint>) -> SCResult<()> {
+	fn perform_action(&self, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		match action {
-			Action::Nothing => {},
+			Action::Nothing => Ok(PerformActionResult::Nothing),
 			Action::AddValidator(addr) => {
-				self.change_user_role(*addr, UserRole::Validator);
+				self.change_user_role(addr, UserRole::Validator);
+				Ok(PerformActionResult::Nothing)
 			},
 			Action::RemoveUser(user_address) => {
-				self.change_user_role(*user_address, UserRole::None);
+				self.change_user_role(user_address, UserRole::None);
 				let num_board_members = self.num_validators().get();
 				require!(
 					num_board_members > 0,
@@ -258,19 +260,26 @@ pub trait Multisig {
 					self.min_valid().get() <= num_board_members,
 					"quorum cannot exceed board size"
 				);
+				Ok(PerformActionResult::Nothing)
 			},
 			Action::ChangeMinValid(new_quorum) => {
 				require!(
-					*new_quorum <= self.num_validators().get(),
+					new_quorum <= self.num_validators().get(),
 					"quorum cannot exceed board size"
 				);
-				self.min_valid().set(new_quorum)
+				self.min_valid().set(&new_quorum);
+				Ok(PerformActionResult::Nothing)
 			},
 			Action::SendXP { to, amount, data } => {
-				self.send_tx(&to, &amount, data.as_slice());
+				self.send().esdt_local_mint(self.blockchain().get_gas_left(), XPTOKEN_IDENT, &amount);
+				Ok(PerformActionResult::SendXP(SendToken {
+					api: self.send(),
+					to,
+					token: XPTOKEN_IDENT.into(),
+					amount,
+					data
+				}))
 			},
 		}
-
-		Ok(())
 	}
 }

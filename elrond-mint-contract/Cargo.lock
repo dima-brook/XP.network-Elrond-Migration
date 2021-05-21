@@ -94,17 +94,10 @@ name = "elrond-mint-contract"
 version = "0.0.0"
 dependencies = [
  "elrond-wasm",
+ "elrond-wasm-debug",
  "elrond-wasm-derive",
  "elrond-wasm-module-users",
-]
-
-[[package]]
-name = "elrond-mint-contract-abi"
-version = "0.0.0"
-dependencies = [
- "elrond-mint-contract",
- "elrond-wasm",
- "elrond-wasm-debug",
+ "elrond-wasm-node",
 ]
 
 [[package]]
@@ -157,6 +150,16 @@ checksum = "33967b86d5b8b8c3df46c18639dac9846956b02fd280915812991bdde948a25e"
 dependencies = [
  "elrond-wasm",
  "elrond-wasm-derive",
+ "elrond-wasm-node",
+]
+
+[[package]]
+name = "elrond-wasm-node"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41a9027905abf02975b29cb12fb814d0678cea28547eecbbf9774473959bfb33"
+dependencies = [
+ "elrond-wasm",
 ]
 
 [[package]]
