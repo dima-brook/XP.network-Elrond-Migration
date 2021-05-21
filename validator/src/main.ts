@@ -1,9 +1,9 @@
+import { DecodedEvent } from '@polkadot/api-contract/types';
 import * as yargs from 'yargs';
 
 import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
-import { ConcreteJson } from './types';
 
 const main = async () => {
     const args = yargs.options({
@@ -23,7 +23,7 @@ const main = async () => {
             alias: 'p',
             demandOption: true,
             type: 'string',
-            description: 'validator private key',
+            description: 'hex encoded validator private key',
         },
         sender: {
             alias: 's',
@@ -52,10 +52,12 @@ const main = async () => {
     );
     const elrd = await elrond.newHelper(
         args.enode,
-        Buffer.from(args.privk),
+        Buffer.from(args.privk, "hex"),
         args.sender,
         args.minter
     );
+
+    console.log("READY TO LISTEN EVENTS!");
 
     polka.api.query.system.events((events) => {
         events.forEach(({ event }) => {
@@ -63,7 +65,6 @@ const main = async () => {
             if (event.method != 'ContractEmitted') {
                 return;
             }
-            console.log(`event data: ${event.data[0]}`);
             // Not our contract
             if (
                 event.data[0].toString() !=
@@ -72,13 +73,9 @@ const main = async () => {
                 return;
             }
 
-            const ev = polka.freezer.abi.decodeEvent(event.data[1].toU8a());
-            // TODO: Fix decoding
-            const cev: ConcreteJson = event.data[1].toJSON() as ConcreteJson;
-            const to: string = cev['to'] as string;
-            const value: number = cev['value'] as number;
-            console.log(ev);
-            console.log(cev);
+            const cev: DecodedEvent = polka.freezer.abi.decodeEvent(Buffer.from(event.data[1].toString().replace('0x', ''), "hex"))
+            const to = cev.args[0].toJSON() as string;
+            const value = cev.args[1].toJSON() as number;
 
             elrond.verifyEmitMint(elrd, to, value);
         });

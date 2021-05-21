@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0xbd23e9990d4cfd9b176b9068fa02ab545fcfea7d887ea2dfd619233d5ba86140",
+    "hash": "0xbc07d79e86d10e17edfeeb15a6d690246384b7d28d8991cadd62e68a8f54fba6",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -33,9 +33,9 @@
             "name": "to",
             "type": {
               "displayName": [
-                "AccountId"
+                "String"
               ],
-              "type": 4
+              "type": 10
             }
           },
           {
@@ -46,7 +46,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 10
+              "type": 11
             }
           }
         ],
@@ -64,16 +64,16 @@
             "name": "to",
             "type": {
               "displayName": [
-                "AccountId"
+                "String"
               ],
-              "type": 4
+              "type": 10
             }
           }
         ],
         "docs": [
           " Emit a transfer event while locking",
           " existing coins",
-          " TODO: Support Xpub"
+          " TODO: Support elrond addr"
         ],
         "mutates": true,
         "name": [
@@ -100,7 +100,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 10
+              "type": 11
             }
           }
         ],
@@ -113,12 +113,7 @@
           "pop"
         ],
         "payable": false,
-        "returnType": {
-          "displayName": [
-            "Result"
-          ],
-          "type": 11
-        },
+        "returnType": null,
         "selector": "0x5dbd4378"
       },
       {
@@ -381,45 +376,12 @@
     },
     {
       "def": {
-        "primitive": "u128"
+        "primitive": "str"
       }
     },
     {
       "def": {
-        "variant": {
-          "variants": [
-            {
-              "fields": [
-                {
-                  "type": 12,
-                  "typeName": "T"
-                }
-              ],
-              "name": "Ok"
-            },
-            {
-              "fields": [
-                {
-                  "type": 9,
-                  "typeName": "E"
-                }
-              ],
-              "name": "Err"
-            }
-          ]
-        }
-      },
-      "params": [
-        12,
-        9
-      ],
-      "path": [
-        "Result"
-      ]
-    },
-    {
-      "def": {
-        "primitive": "bool"
+        "primitive": "u128"
       }
     }
   ]

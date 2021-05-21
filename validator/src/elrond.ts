@@ -30,7 +30,7 @@ export async function newHelper(
     await NetworkConfig.getDefault().sync(provider);
     const eMinterAddr = new Address(sender);
     const senderac = new Account(eMinterAddr);
-    const signer = new UserSigner(new UserSecretKey(secret_key)); // TODO
+    const signer = new UserSigner(new UserSecretKey(secret_key));
     await senderac.sync(provider);
 
     return {
