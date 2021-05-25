@@ -4,7 +4,7 @@ use ink_lang as ink;
 extern crate alloc;
 
 #[ink::contract]
-mod freezer {
+pub mod freezer {
     use bech32;
     use uuid::Uuid;
     use alloc::string::String;
