@@ -6,6 +6,7 @@ extern crate alloc;
 #[ink::contract]
 mod freezer {
     use bech32;
+    use uuid::Uuid;
     use alloc::string::String;
 
     /// Contract Storage
@@ -19,6 +20,7 @@ mod freezer {
     /// validators must subscribe to this
     #[ink(event)]
     pub struct Transfer {
+        action_id: u128,
         to: String,
         value: Balance
     }
@@ -41,6 +43,7 @@ mod freezer {
                 panic!("Value must be > 0!")
             }
             self.env().emit_event( Transfer {
+                action_id: Uuid::new_v4().as_u128(),
                 to,
                 value: val,
             } )
@@ -49,10 +52,12 @@ mod freezer {
         /// unfreeze tokens and send them to an address
         /// only validators can call this
         #[ink(message)]
-        pub fn pop(&mut self, to: AccountId, value: Balance) {
+        pub fn pop(&mut self, to: AccountId, value: Balance) -> bool {
             if self.validators.get(&self.env().caller()).is_some() {
                 self.env().transfer(to, value).unwrap(); // TODO: Return concrete error
+                return true;
             }
+            return false;
         }
 
         /// Subscribe to events & become a validator
@@ -65,7 +70,8 @@ mod freezer {
 
         /// Number of validators
         /// only for debugging
-        fn validator_cnt(&mut self) -> u32 {
+        #[ink(message)]
+        pub fn validator_cnt(&mut self) -> u32 {
             self.validators.len()
         }
     }
@@ -99,8 +105,7 @@ mod freezer {
         #[ink::test]
         fn send_test() {
             let mut freezer = Freezer::default();
-            let addr = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>().unwrap().alice;
-            freezer.send(addr.to_string());
+            freezer.send("erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th".to_string());
             let evs = ink_env::test::recorded_events().collect::<Vec<_>>();
             assert_eq!(evs.len(), 1);
         }
@@ -110,11 +115,10 @@ mod freezer {
         fn pop() {
             let mut freezer = Freezer::default();
             let acc = [0; 32];
-            assert_eq!(freezer.pop(acc.clone().into(), 0x0), Ok(false));
+            assert!(!freezer.pop(acc.clone().into(), 0x0));
 
             freezer.subscribe();
-            assert_eq!(freezer.pop(acc.clone().into(), 0x0), Ok(true));
-            assert_eq!(freezer.pop(acc.clone().into(), 1).is_err(), true);
+            freezer.pop(acc.clone().into(), 0x0);
         }
     }
 }
