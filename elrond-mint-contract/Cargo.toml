@@ -29,6 +29,9 @@ version = "0.16.2"
 [dependencies.elrond-wasm-derive]
 version = "0.16.2"
 
+[dependencies.elrond-codec]
+version = "0.5.3"
+
 [dependencies.elrond-wasm-node]
 version = "0.16.2"
 optional = true

@@ -2,7 +2,7 @@
 use elrond_wasm::{
 	api::{BigUintApi, EndpointFinishApi, SendApi},
 	io::EndpointResult,
-	types::{Address, BoxedBytes, OptionalResult, SendToken},
+	types::{Address, BoxedBytes, OptionalResult, SendToken, Vec},
 };
 
 elrond_wasm::derive_imports!();
@@ -19,6 +19,26 @@ pub enum Action<BigUint: BigUintApi> {
 		data: BoxedBytes,
 	},
 }
+
+#[derive(TopEncode, TopDecode, TypeAbi)]
+pub struct ActionInfo<BigUint: BigUintApi> {
+	pub action: Action<BigUint>,
+	pub signers: Vec<usize>,
+	pub executed: bool,
+	pub event_recv_cnt: usize
+}
+
+impl<BigUint: BigUintApi> ActionInfo<BigUint>{
+	pub fn new(action: Action<BigUint>, signers: Vec<usize>, executed: bool, event_recv_cnt: usize) -> Self {
+		Self {
+			action,
+			signers,
+			executed,
+			event_recv_cnt
+		}
+	}
+}
+
 #[derive(TypeAbi)]
 pub enum PerformActionResult<SA>
 where

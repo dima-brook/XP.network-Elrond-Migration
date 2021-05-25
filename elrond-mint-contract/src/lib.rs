@@ -1,12 +1,14 @@
 #![no_std]
 
 mod action;
+mod events;
 mod user_role;
 
-use action::{Action, PerformActionResult};
+use action::{Action, ActionInfo, PerformActionResult};
 use user_role::UserRole;
 
 elrond_wasm::imports!();
+
 
 #[elrond_wasm_derive::contract]
 pub trait Multisig {
@@ -28,15 +30,19 @@ pub trait Multisig {
 	#[storage_mapper("num_validators")]
 	fn num_validators(&self) -> SingleValueMapper<Self::Storage, usize>;
 
-	/// Action: SignCnt
+	/// TODO: Use proper events instead of manual storage
+	/// Action: (Signs, executed, Num Event Received)
 	#[storage_mapper("action_data")]
-	fn action_mapper(&self) -> MapMapper<Self::Storage, Action<Self::BigUint>, Vec<usize>>;
+	fn action_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
 
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, BoxedBytes>;
 
-	fn clear_action(&self, action: &Action<Self::BigUint>) {
-		self.action_mapper().remove(action);
+	fn set_executed(&self, id: Self::BigUint) {
+		let mut action_mapper = self.action_mapper();
+		let mut info = action_mapper.get(&id).unwrap();
+		info.executed = true;
+		action_mapper.insert(id, info);
 	}
 
 	#[init]
@@ -64,9 +70,10 @@ pub trait Multisig {
 		Ok(())
 	}
 
+	// TODO
 	#[payable("EGLD")]
 	#[endpoint]
-	fn deposit(&self) {}
+	fn freeze(&self) {}
 
 	#[view(userRole)]
 	fn user_role(&self, user: Address) -> UserRole {
@@ -78,7 +85,7 @@ pub trait Multisig {
 		}
 	}
 
-	fn validate_action(&self, action: Action<Self::BigUint>) -> SCResult<()> {
+	fn validate_action(&self, id: Self::BigUint, action: Action<Self::BigUint>) -> SCResult<()> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
 		let caller_role = self.get_user_id_to_role(caller_id);
@@ -90,10 +97,11 @@ pub trait Multisig {
 		let mut ret = false;
 		let mut action_mapper = self.action_mapper();
 		let mut valid_signers_count = 0;
+		let ac = action.clone();
 		action_mapper
-			.entry(action.clone())
-			.or_insert_with(|| Vec::with_capacity(self.num_validators().get()))
-			.update(|signers| {
+			.entry(id.clone())
+			.or_insert_with(|| ActionInfo::new(ac, Vec::with_capacity(self.num_validators().get()), false, 0))
+			.update(|ActionInfo { signers, .. }| {
 				if signers.contains(&caller_id) {
 					ret = true;
 					return;
@@ -107,40 +115,68 @@ pub trait Multisig {
 
 		if valid_signers_count == min_valid {
 			let res = self.perform_action(action);
-			return if let Ok(_) = res {
-				Ok(())
+			self.set_executed(id);
+
+			return if let Err(e) = res {
+				Err(e)
 			} else {
-				Err(res.err().unwrap())
+				Ok(())
 			};
-		} else if valid_signers_count > min_valid && valid_signers_count == self.num_validators().get() {
-			// clean up storage
-			self.clear_action(&action);
 		}
 	
 		Ok(())
 	}
 
+	#[endpoint(executedCheck)]
+	fn executed_check_event(&self, id: Self::BigUint) -> SCResult<bool> {
+		let caller_address = self.blockchain().get_caller();
+		let caller_id = self.user_mapper().get_user_id(&caller_address);
+		let caller_role = self.get_user_id_to_role(caller_id);
+		require!(caller_role.can_sign(), "only validators can check events");
+
+		let mut action_mapper = self.action_mapper();
+		let info = action_mapper.get(&id);
+		if info.is_none() {
+			return sc_error!("");
+		}
+
+		let mut info = info.unwrap();
+		if !info.executed {
+			return Ok(false);
+		}
+
+		info.event_recv_cnt += 1;
+		if info.event_recv_cnt == self.num_validators().get() {
+			action_mapper.remove(&id).unwrap();
+		} else {
+			action_mapper.insert(id, info).unwrap();
+		}
+
+		return Ok(true);
+	}
+
 	/// Initiates board member addition process.
 	/// Can also be used to promote a proposer to board member.
 	#[endpoint(proposeAddValidator)]
-	fn propose_add_validator(&self, board_member_address: Address) -> SCResult<()> {
-		self.validate_action(Action::AddValidator(board_member_address))
+	fn propose_add_validator(&self, uuid: Self::BigUint, board_member_address: Address) -> SCResult<()> {
+		self.validate_action(uuid, Action::AddValidator(board_member_address))
 	}
 
 	/// Removes user regardless of whether it is a board member or proposer.
 	#[endpoint(proposeRemoveUser)]
-	fn propose_remove_user(&self, user_address: Address) -> SCResult<()> {
-		self.validate_action(Action::RemoveUser(user_address))
+	fn propose_remove_user(&self, uuid: Self::BigUint, user_address: Address) -> SCResult<()> {
+		self.validate_action(uuid, Action::RemoveUser(user_address))
 	}
 
 	#[endpoint(proposeChangeMinValid)]
-	fn propose_change_min_valid(&self, new_quorum: usize) -> SCResult<()> {
-		self.validate_action(Action::ChangeMinValid(new_quorum))
+	fn propose_change_min_valid(&self, uuid: Self::BigUint, new_quorum: usize) -> SCResult<()> {
+		self.validate_action(uuid, Action::ChangeMinValid(new_quorum))
 	}
 
 	#[endpoint(validateSendXp)]
 	fn validate_send_xp(
 		&self,
+		uuid: Self::BigUint,
 		to: Address,
 		amount: Self::BigUint,
 		#[var_args] opt_data: OptionalArg<BoxedBytes>,
@@ -149,10 +185,10 @@ pub trait Multisig {
 			OptionalArg::Some(data) => data,
 			OptionalArg::None => BoxedBytes::empty(),
 		};
-		self.validate_action(Action::SendXP { to, amount, data })
+		self.validate_action(uuid, Action::SendXP { to, amount, data })
 	}
 
-		/// Can be used to:
+	/// Can be used to:
 	/// - create new user (board member / proposer)
 	/// - remove user (board member / proposer)
 	/// - reactivate removed user

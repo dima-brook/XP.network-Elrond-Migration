@@ -11,6 +11,7 @@
                 "value": "0",
                 "function": "proposeRemoveUser",
                 "arguments": [
+                    "0",
                     "address:alice"
                 ],
                 "gasLimit": "100,000",
@@ -32,7 +33,10 @@
                 "to": "address:elrond_mint_contract",
                 "value": "0",
                 "function": "proposeRemoveUser",
-                "arguments": ["address:alice"],
+                "arguments": [                   
+                    "0",
+                    "address:alice"
+                ],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
             },
@@ -52,7 +56,10 @@
                 "to": "address:elrond_mint_contract",
                 "value": "0",
                 "function": "proposeRemoveUser",
-                "arguments": ["address:alice"],
+                "arguments": [                   
+                    "0",
+                    "address:alice"
+                ],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
             },
@@ -79,6 +86,86 @@
             "expect": {
                 "out": ["3"],
                 "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "rem-alice-confirm-recv-bob",
+            "tx": {
+                "from": "address:bob",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "rem-alice-confirm-recv-bob",
+            "tx": {
+                "from": "address:dan",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "rem-alice-confirm-recv-charlie",
+            "tx": {
+                "from": "address:charlie",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "rem-alice-confirm-action-nuked",
+            "tx": {
+                "from": "address:dan",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "4",
                 "logs": [],
                 "gas": "*",
                 "refund": "*"

@@ -10,12 +10,32 @@
                 "to": "address:elrond_mint_contract",
                 "value": "0",
                 "function": "proposeAddValidator",
-                "arguments": ["address:dan"],
+                "arguments": ["0", "address:dan"],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
             },
             "expect": {
                 "out": [],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-not-added",
+            "tx": {
+                "from": "address:alice",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["false"],
                 "status": "",
                 "logs": [],
                 "gas": "*",
@@ -30,7 +50,7 @@
                 "to": "address:elrond_mint_contract",
                 "value": "0",
                 "function": "proposeAddValidator",
-                "arguments": ["address:dan"],
+                "arguments": ["0", "address:dan"],
                 "gasLimit": "100,000",
                 "gasPrice": "0"
             },
@@ -44,7 +64,7 @@
         },
         {
             "step": "scCall",
-            "txId": "bm-add-1-perform",
+            "txId": "bm-add-1-check",
             "tx": {
                 "from": "address:owner",
                 "to": "address:elrond_mint_contract",
@@ -57,6 +77,106 @@
             "expect": {
                 "out": ["1"],
                 "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-recv-alice",
+            "tx": {
+                "from": "address:alice",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-recv-bob",
+            "tx": {
+                "from": "address:bob",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-recv-dan",
+            "tx": {
+                "from": "address:dan",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-recv-charlie",
+            "tx": {
+                "from": "address:charlie",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "txId": "bm-add-1-confirm-action-nuked",
+            "tx": {
+                "from": "address:dan",
+                "to": "address:elrond_mint_contract",
+                "value": "0",
+                "function": "executedCheck",
+                "arguments": ["0"],
+                "gasLimit": "100,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "4",
                 "logs": [],
                 "gas": "*",
                 "refund": "*"
