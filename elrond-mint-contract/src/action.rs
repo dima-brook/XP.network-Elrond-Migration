@@ -7,6 +7,7 @@ use elrond_wasm::{
 
 elrond_wasm::derive_imports!();
 
+/// Available actions that validators can call
 #[derive(Clone, NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
 pub enum Action<BigUint: BigUintApi> {
 	Nothing,
@@ -20,6 +21,7 @@ pub enum Action<BigUint: BigUintApi> {
 	},
 }
 
+// Information associated with an action
 #[derive(TopEncode, TopDecode, TypeAbi)]
 pub struct ActionInfo<BigUint: BigUintApi> {
 	pub action: Action<BigUint>,
@@ -39,6 +41,7 @@ impl<BigUint: BigUintApi> ActionInfo<BigUint>{
 	}
 }
 
+/// Action Result
 #[derive(TypeAbi)]
 pub enum PerformActionResult<SA>
 where

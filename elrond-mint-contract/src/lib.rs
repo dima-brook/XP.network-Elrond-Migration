@@ -12,9 +12,11 @@ elrond_wasm::imports!();
 
 #[elrond_wasm_derive::contract]
 pub trait Multisig {
+	/// Validator Stroage
 	#[storage_mapper("user")]
 	fn user_mapper(&self) -> UserMapper<Self::Storage>;
 
+	/// Validator threshould
 	#[view(getMinValid)]
 	#[storage_mapper("min_valid")]
 	fn min_valid(&self) -> SingleValueMapper<Self::Storage, usize>;
@@ -26,6 +28,7 @@ pub trait Multisig {
 	#[storage_set("user_role")]
 	fn set_user_id_to_role(&self, user_id: usize, user_role: UserRole);
 
+	/// Number of validators
 	#[view(getNumValidators)]
 	#[storage_mapper("num_validators")]
 	fn num_validators(&self) -> SingleValueMapper<Self::Storage, usize>;
@@ -35,6 +38,7 @@ pub trait Multisig {
 	#[storage_mapper("action_data")]
 	fn action_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
 
+	/// Supported Wrapper Token name
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, BoxedBytes>;
 
@@ -70,11 +74,12 @@ pub trait Multisig {
 		Ok(())
 	}
 
-	// TODO
+	/// TODO
 	#[payable("EGLD")]
 	#[endpoint]
 	fn freeze(&self) {}
 
+	/// 1 if User is a validator
 	#[view(userRole)]
 	fn user_role(&self, user: Address) -> UserRole {
 		let user_id = self.user_mapper().get_user_id(&user);
@@ -127,6 +132,8 @@ pub trait Multisig {
 		Ok(())
 	}
 
+	/// Check if an action was completed
+	/// Only validators can call this
 	#[endpoint(executedCheck)]
 	fn executed_check_event(&self, id: Self::BigUint) -> SCResult<bool> {
 		let caller_address = self.blockchain().get_caller();
@@ -168,11 +175,13 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::RemoveUser(user_address))
 	}
 
+	/// Change validator threshould
 	#[endpoint(proposeChangeMinValid)]
 	fn propose_change_min_valid(&self, uuid: Self::BigUint, new_quorum: usize) -> SCResult<()> {
 		self.validate_action(uuid, Action::ChangeMinValid(new_quorum))
 	}
 
+	/// Send wrapper tokens
 	#[endpoint(validateSendXp)]
 	fn validate_send_xp(
 		&self,
