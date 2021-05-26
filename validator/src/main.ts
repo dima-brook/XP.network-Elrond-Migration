@@ -1,14 +1,11 @@
 import { DecodedEvent } from '@polkadot/api-contract/types';
 
-import * as fs from 'fs';
 import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
 import config from './config'
 
 const main = async () => {
-    const private_key = await fs.promises.readFile(config.private_key);
-
     const polka = await polkadot.newHelper(
         config.xnode,
         freezer_abi,
@@ -16,7 +13,7 @@ const main = async () => {
     );
     const elrd = await elrond.newHelper(
         config.elrond_node,
-        private_key,
+        Buffer.from(config.private_key, "hex"),
         config.elrond_sender,
         config.elrond_minter
     );
