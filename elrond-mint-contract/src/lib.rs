@@ -39,6 +39,7 @@ pub trait Multisig {
 	fn action_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
 
 	/// Supported Wrapper Token name
+	#[view(token)]
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, BoxedBytes>;
 
@@ -75,9 +76,13 @@ pub trait Multisig {
 	}
 
 	/// TODO
-	#[payable("EGLD")]
-	#[endpoint]
+	#[payable("*")]
+	#[endpoint(freeze)]
 	fn freeze(&self) {}
+
+	#[payable("*")]
+	#[endpoint(deposit)]
+	fn deposit(&self) {}
 
 	/// 1 if User is a validator
 	#[view(userRole)]

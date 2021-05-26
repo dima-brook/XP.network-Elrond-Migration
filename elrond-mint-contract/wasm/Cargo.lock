@@ -70,6 +70,7 @@ dependencies = [
 name = "elrond-mint-contract"
 version = "0.0.0"
 dependencies = [
+ "elrond-codec 0.5.3",
  "elrond-wasm 0.16.2",
  "elrond-wasm-derive",
  "elrond-wasm-module-users",
