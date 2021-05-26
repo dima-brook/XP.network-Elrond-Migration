@@ -6,7 +6,6 @@ extern crate alloc;
 #[ink::contract]
 pub mod freezer {
     use bech32;
-    use uuid::Uuid;
     use alloc::string::String;
 
     /// Contract Storage
@@ -16,7 +15,8 @@ pub mod freezer {
     pub struct Freezer {
         validators: ink_storage::collections::HashMap<AccountId, ()>, // O(1) contains
         // action_id: pop_info
-        pop_action: ink_storage::collections::HashMap<String, PopInfo>
+        pop_action: ink_storage::collections::HashMap<String, PopInfo>,
+        last_action: u128
     }
 
     /// Transfer to elrond chain event
@@ -36,7 +36,8 @@ pub mod freezer {
         pub fn default() -> Self {
             Self { 
                 validators: Default::default(),
-                pop_action: Default::default()
+                pop_action: Default::default(),
+                last_action: 0
             }
         }
 
@@ -51,8 +52,9 @@ pub mod freezer {
             if val == 0 {
                 panic!("Value must be > 0!")
             }
+            self.last_action += 1;
             self.env().emit_event( Transfer {
-                action_id: Uuid::new_v4().as_u128(),
+                action_id: self.last_action,
                 to,
                 value: val,
             } )

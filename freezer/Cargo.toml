@@ -15,7 +15,6 @@ bech32 = { version = "0.8.0", git = "https://github.com/rust-bitcoin/rust-bech32
 scale = { package = "parity-scale-codec", version = "2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "0.6.0", default-features = false, features = ["derive"], optional = true }
 sp-core = { version = "3.0", default-features = false }
-uuid = { version = "0.8", default-features = false, features = ["v4", "serde"] }
 
 [lib]
 name = "freezer"
@@ -36,6 +35,5 @@ std = [
     "scale-info/std",
 	"sp-core/std",
 	"bech32/std",
-	"uuid/std"
 ]
 ink-as-dependency = []
