@@ -39,7 +39,7 @@ export async function newHelper(
         provider: provider,
         sender: senderac,
         signer: signer,
-        mintContract: new Address(minter)
+        mintContract: new Address(minter),
     };
 }
 
