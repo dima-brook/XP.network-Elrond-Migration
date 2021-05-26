@@ -11,9 +11,12 @@ pub mod freezer {
 
     /// Contract Storage
     /// Stores a list of validators
+    #[derive(Default)]
     #[ink(storage)]
     pub struct Freezer {
         validators: ink_storage::collections::HashMap<AccountId, ()>, // O(1) contains
+        // action_id: pop_info
+        pop_action: ink_storage::collections::HashMap<String, PopInfo>
     }
 
     /// Transfer to elrond chain event
@@ -25,10 +28,16 @@ pub mod freezer {
         value: Balance
     }
 
+    // to, value, num_validators
+    type PopInfo = (AccountId, Balance, u16);
+
     impl Freezer {
         #[ink(constructor)]
         pub fn default() -> Self {
-            Self { validators: Default::default() }
+            Self { 
+                validators: Default::default(),
+                pop_action: Default::default()
+            }
         }
 
         /// Emit a transfer event while locking
@@ -52,12 +61,27 @@ pub mod freezer {
         /// unfreeze tokens and send them to an address
         /// only validators can call this
         #[ink(message)]
-        pub fn pop(&mut self, to: AccountId, value: Balance) -> bool {
-            if self.validators.get(&self.env().caller()).is_some() {
-                self.env().transfer(to, value).unwrap(); // TODO: Return concrete error
-                return true;
+        pub fn pop(&mut self, action_id: String, to: AccountId, value: Balance) -> bool {
+            let caller = self.env().caller();
+            if self.validators.get(&caller).is_none() {
+                return false;
             }
-            return false;
+
+            let ref mut valids = self.pop_action.entry(action_id.clone())
+                .or_insert_with(|| (to, value, 0));
+            valids.2 += 1;
+            let valids = valids.2;
+
+            let validator_cnt = self.validator_cnt();
+            if valids as u32 > (2*validator_cnt/3)+1 {
+                self.env().transfer(to, value).unwrap();
+            }
+
+            if valids as u32 == validator_cnt {
+                self.pop_action.take(&action_id).unwrap();
+            }
+            
+            return true;
         }
 
         /// Subscribe to events & become a validator
@@ -73,6 +97,10 @@ pub mod freezer {
         #[ink(message)]
         pub fn validator_cnt(&mut self) -> u32 {
             self.validators.len()
+        }
+
+        fn pop_cnt(&mut self) -> u32 {
+            self.pop_action.len()
         }
     }
 
@@ -114,11 +142,15 @@ pub mod freezer {
         #[ink::test]
         fn pop() {
             let mut freezer = Freezer::default();
-            let acc = [0; 32];
-            assert!(!freezer.pop(acc.clone().into(), 0x0));
+
+            let acc: AccountId = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>().unwrap().alice;
+            let action = "0".to_string();
+
+            assert!(!freezer.pop(action.clone(), acc.clone().into(), 0x0));
 
             freezer.subscribe();
-            freezer.pop(acc.clone().into(), 0x0);
+            freezer.pop(action.clone(), acc.clone().into(), 0x0);
+            assert_eq!(freezer.pop_cnt(), 0)
         }
     }
 }
