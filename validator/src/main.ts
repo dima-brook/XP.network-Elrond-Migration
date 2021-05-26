@@ -7,7 +7,6 @@ import * as polkadot from './polkadot';
 import config from './config'
 
 const main = async () => {
-
     const private_key = await fs.promises.readFile(config.private_key);
 
     const polka = await polkadot.newHelper(
@@ -39,10 +38,11 @@ const main = async () => {
             }
 
             const cev: DecodedEvent = polka.freezer.abi.decodeEvent(Buffer.from(event.data[1].toString().replace('0x', ''), "hex"))
-            const to = cev.args[0].toJSON() as string;
-            const value = cev.args[1].toJSON() as number;
+            const action_id = Buffer.from(cev.args[0].toHex(), "hex");
+            const to = cev.args[1].toJSON() as string;
+            const value = cev.args[2].toJSON() as number;
 
-            elrond.verifyEmitMint(elrd, to, value);
+            elrond.verifyEmitMint(elrd, action_id, to, value);
         });
     });
 };
