@@ -1,0 +1,223 @@
+{
+    "name": "Multisig",
+    "constructor": {
+        "inputs": [
+            {
+                "name": "token",
+                "type": "bytes"
+            },
+            {
+                "name": "min_valid",
+                "type": "u32"
+            },
+            {
+                "name": "validators",
+                "type": "variadic<Address>",
+                "multi_arg": true
+            }
+        ],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "docs": [
+                "Validator threshould"
+            ],
+            "name": "getMinValid",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "name": "getUserRole",
+            "inputs": [
+                {
+                    "name": "user_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "UserRole"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Number of validators"
+            ],
+            "name": "getNumValidators",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Supported Wrapper Token name"
+            ],
+            "name": "token",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "TODO"
+            ],
+            "name": "freeze",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "deposit",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "1 if User is a validator"
+            ],
+            "name": "userRole",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "UserRole"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Check if an action was completed",
+                "Only validators can call this"
+            ],
+            "name": "executedCheck",
+            "inputs": [
+                {
+                    "name": "id",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Initiates board member addition process.",
+                "Can also be used to promote a proposer to board member."
+            ],
+            "name": "proposeAddValidator",
+            "inputs": [
+                {
+                    "name": "uuid",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "board_member_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Removes user regardless of whether it is a board member or proposer."
+            ],
+            "name": "proposeRemoveUser",
+            "inputs": [
+                {
+                    "name": "uuid",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "user_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Change validator threshould"
+            ],
+            "name": "proposeChangeMinValid",
+            "inputs": [
+                {
+                    "name": "uuid",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "new_quorum",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Send wrapper tokens"
+            ],
+            "name": "validateSendXp",
+            "inputs": [
+                {
+                    "name": "uuid",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "to",
+                    "type": "Address"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "opt_data",
+                    "type": "optional<bytes>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "types": {
+        "UserRole": {
+            "type": "enum",
+            "docs": [
+                "Valid user roles"
+            ],
+            "variants": [
+                {
+                    "name": "None",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Validator",
+                    "discriminant": 1
+                }
+            ]
+        }
+    }
+}
