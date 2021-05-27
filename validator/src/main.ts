@@ -1,5 +1,6 @@
 import { DecodedEvent } from '@polkadot/api-contract/types';
 
+import * as fs from 'fs';
 import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
@@ -10,7 +11,7 @@ async function polkaEventListener(
     elrd: elrond.ElrondHelper
 ): Promise<void> {
     polka.api.query.system.events((events) => {
-        events.forEach(({ event }) => {
+        events.forEach(async ({ event }) => {
             // Not a contract event
             if (event.method != 'ContractEmitted') {
                 return;
@@ -30,12 +31,15 @@ async function polkaEventListener(
             console.log(`to: ${to}`);
             console.log(`value: ${value}`);
 
-            elrond.verifyEmitMint(elrd, action_id, to, value);
+            const tx = await elrond.verifyEmitMint(elrd, action_id, to, value);
+            console.log(`Hash: ${tx.getHash().toString()}`);
         });
     });
 }
 
 const main = async () => {
+    const private_key = await fs.promises.readFile(config.private_key, "utf-8");
+
     const polka = await polkadot.newHelper(
         config.xnode,
         freezer_abi,
@@ -43,7 +47,7 @@ const main = async () => {
     );
     const elrd = await elrond.newHelper(
         config.elrond_node,
-        Buffer.from(config.private_key, 'hex'),
+        private_key,
         config.elrond_sender,
         config.elrond_minter
     );

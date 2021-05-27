@@ -8,11 +8,11 @@ import {
     GasLimit,
     ISigner,
     NetworkConfig,
+    parseUserKey,
     ProxyProvider,
     Transaction,
     TransactionPayload,
     U32Value,
-    UserSecretKey,
     UserSigner,
 } from '@elrondnetwork/erdjs';
 
@@ -25,7 +25,7 @@ export type ElrondHelper = {
 
 export async function newHelper(
     node_uri: string,
-    secret_key: Buffer,
+    secret_key: string,
     sender: string,
     minter: string
 ): Promise<ElrondHelper> {
@@ -33,10 +33,7 @@ export async function newHelper(
     await NetworkConfig.getDefault().sync(provider);
     const eMinterAddr = new Address(sender);
     const senderac = new Account(eMinterAddr);
-    const signer = new UserSigner(new UserSecretKey(secret_key));
-    await senderac.sync(provider);
-
-    console.log(`minter: ${minter}`);
+    const signer = new UserSigner(parseUserKey(secret_key));
 
     return {
         provider: provider,
@@ -52,6 +49,8 @@ export async function verifyEmitMint(
     to: string,
     value: number
 ): Promise<Transaction> {
+    await helper.sender.sync(helper.provider);
+
     const tx = new Transaction({
         receiver: helper.mintContract,
         nonce: helper.sender.nonce,
