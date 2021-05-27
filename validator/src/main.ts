@@ -1,10 +1,22 @@
 import { DecodedEvent } from '@polkadot/api-contract/types';
 
+import { io } from 'socket.io-client';
 import * as fs from 'fs';
 import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
 import config from './config';
+
+async function elrdEventListener(
+    elrd: elrond.ElrondHelper,
+    polka: polkadot.PolkadotHelper
+): Promise<void> {
+    elrd.eventSocket.on("elrond:emitted_event", async (id) => {
+        console.log(`received event ${id}`);
+        const ev_info = await elrond.getDepositEvent(elrd, id);
+        polkadot.pop(polka, ev_info[0], ev_info[1])
+    })
+}
 
 async function polkaEventListener(
     polka: polkadot.PolkadotHelper,
@@ -49,12 +61,14 @@ const main = async () => {
         config.elrond_node,
         private_key,
         config.elrond_sender,
-        config.elrond_minter
+        config.elrond_minter,
+        io(config.elrond_ev_socket)
     );
 
     console.log('READY TO LISTEN EVENTS!');
 
     polkaEventListener(polka, elrd);
+    elrdEventListener(elrd, polka);
 };
 
 main();

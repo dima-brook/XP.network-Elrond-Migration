@@ -11,9 +11,11 @@ const config = {
         'erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th',
     // Elrond minter contract address
     elrond_minter:
-        'erd1qqqqqqqqqqqqqpgqg3rhq4rucjhnnxk6zhantd3yuh8v9m5cd8ssp73zh7',
+        'erd1qqqqqqqqqqqqqpgqygvvtlty3v7cad507v5z793duw9jjmlxd8sszs8a2y',
     // Substrate Freezer Contract address
     xp_freezer: '5ESFqZ7xVxxfDgayqMH8ng14QyvR9V42VUqgQ6Z8yM4hyznX',
+    // Workaround Elrond Event websocket
+    elrond_ev_socket: "ws://localhost:3000"
 };
 
 export default config;
