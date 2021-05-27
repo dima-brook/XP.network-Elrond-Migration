@@ -75,7 +75,7 @@ pub mod freezer {
             let valids = valids.2;
 
             let validator_cnt = self.validator_cnt();
-            if valids as u32 > (2*validator_cnt/3)+1 {
+            if valids as u32 == (2*validator_cnt/3)+1 {
                 self.env().transfer(to, value).unwrap();
             }
 
