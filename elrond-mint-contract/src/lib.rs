@@ -95,7 +95,7 @@ pub trait Multisig {
 		}
 	}
 
-	fn validate_action(&self, id: Self::BigUint, action: Action<Self::BigUint>) -> SCResult<()> {
+	fn validate_action(&self, id: Self::BigUint, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
 		let caller_role = self.get_user_id_to_role(caller_id);
@@ -130,11 +130,11 @@ pub trait Multisig {
 			return if let Err(e) = res {
 				Err(e)
 			} else {
-				Ok(())
+				res
 			};
 		}
 	
-		Ok(())
+		Ok(PerformActionResult::Nothing)
 	}
 
 	/// Check if an action was completed
@@ -170,19 +170,19 @@ pub trait Multisig {
 	/// Initiates board member addition process.
 	/// Can also be used to promote a proposer to board member.
 	#[endpoint(proposeAddValidator)]
-	fn propose_add_validator(&self, uuid: Self::BigUint, board_member_address: Address) -> SCResult<()> {
+	fn propose_add_validator(&self, uuid: Self::BigUint, board_member_address: Address) -> SCResult<PerformActionResult<Self::SendApi>> {
 		self.validate_action(uuid, Action::AddValidator(board_member_address))
 	}
 
 	/// Removes user regardless of whether it is a board member or proposer.
 	#[endpoint(proposeRemoveUser)]
-	fn propose_remove_user(&self, uuid: Self::BigUint, user_address: Address) -> SCResult<()> {
+	fn propose_remove_user(&self, uuid: Self::BigUint, user_address: Address) -> SCResult<PerformActionResult<Self::SendApi>> {
 		self.validate_action(uuid, Action::RemoveUser(user_address))
 	}
 
 	/// Change validator threshould
 	#[endpoint(proposeChangeMinValid)]
-	fn propose_change_min_valid(&self, uuid: Self::BigUint, new_quorum: usize) -> SCResult<()> {
+	fn propose_change_min_valid(&self, uuid: Self::BigUint, new_quorum: usize) -> SCResult<PerformActionResult<Self::SendApi>>  {
 		self.validate_action(uuid, Action::ChangeMinValid(new_quorum))
 	}
 
@@ -194,7 +194,7 @@ pub trait Multisig {
 		to: Address,
 		amount: Self::BigUint,
 		#[var_args] opt_data: OptionalArg<BoxedBytes>,
-	) -> SCResult<()> {
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
 		let data = match opt_data {
 			OptionalArg::Some(data) => data,
 			OptionalArg::None => BoxedBytes::empty(),
