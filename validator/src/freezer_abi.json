@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0xbc07d79e86d10e17edfeeb15a6d690246384b7d28d8991cadd62e68a8f54fba6",
+    "hash": "0xa47e90ce16bfaea021a9c19e653f2a7d943871c4058e03192410897f85cb3c7d",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -30,12 +30,23 @@
           {
             "docs": [],
             "indexed": false,
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 14
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
             "name": "to",
             "type": {
               "displayName": [
                 "String"
               ],
-              "type": 10
+              "type": 11
             }
           },
           {
@@ -46,7 +57,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 11
+              "type": 14
             }
           }
         ],
@@ -66,7 +77,7 @@
               "displayName": [
                 "String"
               ],
-              "type": 10
+              "type": 11
             }
           }
         ],
@@ -86,6 +97,15 @@
       {
         "args": [
           {
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
             "name": "to",
             "type": {
               "displayName": [
@@ -100,7 +120,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 11
+              "type": 14
             }
           }
         ],
@@ -113,7 +133,12 @@
           "pop"
         ],
         "payable": false,
-        "returnType": null,
+        "returnType": {
+          "displayName": [
+            "bool"
+          ],
+          "type": 16
+        },
         "selector": "0x5dbd4378"
       },
       {
@@ -129,6 +154,25 @@
         "payable": true,
         "returnType": null,
         "selector": "0xfb968a8f"
+      },
+      {
+        "args": [],
+        "docs": [
+          " Number of validators",
+          " only for debugging"
+        ],
+        "mutates": true,
+        "name": [
+          "validator_cnt"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "u32"
+          ],
+          "type": 2
+        },
+        "selector": "0xa86d00ff"
       }
     ]
   },
@@ -214,6 +258,95 @@
             }
           },
           "name": "validators"
+        },
+        {
+          "layout": {
+            "struct": {
+              "fields": [
+                {
+                  "layout": {
+                    "struct": {
+                      "fields": [
+                        {
+                          "layout": {
+                            "cell": {
+                              "key": "0x0200000001000000000000000000000000000000000000000000000000000000",
+                              "ty": 1
+                            }
+                          },
+                          "name": "header"
+                        },
+                        {
+                          "layout": {
+                            "struct": {
+                              "fields": [
+                                {
+                                  "layout": {
+                                    "cell": {
+                                      "key": "0x0300000001000000000000000000000000000000000000000000000000000000",
+                                      "ty": 2
+                                    }
+                                  },
+                                  "name": "len"
+                                },
+                                {
+                                  "layout": {
+                                    "array": {
+                                      "cellsPerElem": 1,
+                                      "layout": {
+                                        "cell": {
+                                          "key": "0x0300000002000000000000000000000000000000000000000000000000000000",
+                                          "ty": 10
+                                        }
+                                      },
+                                      "len": 4294967295,
+                                      "offset": "0x0400000001000000000000000000000000000000000000000000000000000000"
+                                    }
+                                  },
+                                  "name": "elems"
+                                }
+                              ]
+                            }
+                          },
+                          "name": "entries"
+                        }
+                      ]
+                    }
+                  },
+                  "name": "keys"
+                },
+                {
+                  "layout": {
+                    "hash": {
+                      "layout": {
+                        "cell": {
+                          "key": "0x0400000002000000000000000000000000000000000000000000000000000000",
+                          "ty": 12
+                        }
+                      },
+                      "offset": "0x0300000002000000000000000000000000000000000000000000000000000000",
+                      "strategy": {
+                        "hasher": "Blake2x256",
+                        "postfix": "",
+                        "prefix": "0x696e6b20686173686d6170"
+                      }
+                    }
+                  },
+                  "name": "values"
+                }
+              ]
+            }
+          },
+          "name": "pop_action"
+        },
+        {
+          "layout": {
+            "cell": {
+              "key": "0x0400000002000000000000000000000000000000000000000000000000000000",
+              "ty": 14
+            }
+          },
+          "name": "last_action"
         }
       ]
     }
@@ -376,12 +509,93 @@
     },
     {
       "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "type": 7,
+                  "typeName": "VacantEntry"
+                }
+              ],
+              "name": "Vacant"
+            },
+            {
+              "fields": [
+                {
+                  "type": 11,
+                  "typeName": "T"
+                }
+              ],
+              "name": "Occupied"
+            }
+          ]
+        }
+      },
+      "params": [
+        11
+      ],
+      "path": [
+        "ink_storage",
+        "collections",
+        "stash",
+        "Entry"
+      ]
+    },
+    {
+      "def": {
         "primitive": "str"
       }
     },
     {
       "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "value",
+              "type": 13,
+              "typeName": "V"
+            },
+            {
+              "name": "key_index",
+              "type": 2,
+              "typeName": "KeyIndex"
+            }
+          ]
+        }
+      },
+      "params": [
+        13
+      ],
+      "path": [
+        "ink_storage",
+        "collections",
+        "hashmap",
+        "ValueEntry"
+      ]
+    },
+    {
+      "def": {
+        "tuple": [
+          4,
+          14,
+          15
+        ]
+      }
+    },
+    {
+      "def": {
         "primitive": "u128"
+      }
+    },
+    {
+      "def": {
+        "primitive": "u16"
+      }
+    },
+    {
+      "def": {
+        "primitive": "bool"
       }
     }
   ]

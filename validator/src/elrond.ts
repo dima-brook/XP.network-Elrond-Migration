@@ -5,6 +5,7 @@ import {
     BigUIntValue,
     ContractFunction,
     decodeBigNumber,
+    GasLimit,
     ISigner,
     NetworkConfig,
     ProxyProvider,
@@ -35,6 +36,8 @@ export async function newHelper(
     const signer = new UserSigner(new UserSecretKey(secret_key));
     await senderac.sync(provider);
 
+    console.log(`minter: ${minter}`);
+
     return {
         provider: provider,
         sender: senderac,
@@ -52,6 +55,7 @@ export async function verifyEmitMint(
     const tx = new Transaction({
         receiver: helper.mintContract,
         nonce: helper.sender.nonce,
+        gasLimit: new GasLimit(50000000),
         // fn validate_send_xp(action_id: BigUint, to: Address, amount: BigUint, #[var_args] opt_data: OptionalArg<BoxedBytes>,)
         data: TransactionPayload.contractCall()
             .setFunction(new ContractFunction('validateSendXp'))

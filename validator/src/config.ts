@@ -11,9 +11,9 @@ const config = {
         'erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th',
     // Elrond minter contract address
     elrond_minter:
-        'erd1qqqqqqqqqqqqqpgqfzydqmdw7m2vazsp6u5p95yxz76t2p9rd8ss0zp9ts',
+        'erd1qqqqqqqqqqqqqpgqlz32muzjtu40pp9lapy35n0cvrdxll47d8ss9ne0ta',
     // Substrate Freezer Contract address
-    xp_freezer: '5FqhLfbiQR7MH8gJq9ix9qEky7gbGsaJbg6GoowhoACY45rk',
+    xp_freezer: '5ESFqZ7xVxxfDgayqMH8ng14QyvR9V42VUqgQ6Z8yM4hyznX',
 };
 
 export default config;

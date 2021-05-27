@@ -27,6 +27,9 @@ async function polkaEventListener(
             const to = cev.args[1].toJSON() as string;
             const value = cev.args[2].toJSON() as number;
 
+            console.log(`to: ${to}`);
+            console.log(`value: ${value}`);
+
             elrond.verifyEmitMint(elrd, action_id, to, value);
         });
     });
