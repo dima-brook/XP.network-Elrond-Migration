@@ -6,7 +6,7 @@ export type TransferEvent =  {
 
 export type ServerEvents = {
     // eslint-disable-next-line functional/no-return-void
-    readonly "elrond:emitted_event": (id: BigInt) => void;
+    readonly "elrond:emitted_event": (id: string) => void;
 };
 
 export type ClientEvents = {

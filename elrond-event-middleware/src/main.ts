@@ -9,7 +9,7 @@ const io = socket.socketMain();
 app.post('/newevent', (req, res) => {
     const id = BigInt(req.header("id"));
 
-    io.emit("elrond:emitted_event", id);
+    io.emit("elrond:emitted_event", id.toString());
     res.send('{"status": "ok"}')
 });
 
