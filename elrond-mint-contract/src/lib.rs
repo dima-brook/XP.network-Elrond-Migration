@@ -5,7 +5,9 @@ mod events;
 mod user_role;
 
 use action::{Action, ActionInfo, PerformActionResult};
+use events::TransferEvent;
 use user_role::UserRole;
+use elrond_wasm::String;
 
 elrond_wasm::imports!();
 
@@ -41,7 +43,13 @@ pub trait Multisig {
 	/// Supported Wrapper Token name
 	#[view(token)]
 	#[storage_mapper("token")]
-	fn token(&self) -> SingleValueMapper<Self::Storage, BoxedBytes>;
+	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
+
+	#[storage_mapper("events")]
+	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, TransferEvent<Self::BigUint>>;
+
+	#[storage_mapper("event_ident")]
+	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
 
 	fn set_executed(&self, id: Self::BigUint) {
 		let mut action_mapper = self.action_mapper();
@@ -50,8 +58,32 @@ pub trait Multisig {
 		action_mapper.insert(id, info);
 	}
 
+	#[endpoint(eventRead)]
+	fn event_read(&self, id: Self::BigUint) -> SCResult<TransferEvent<Self::BigUint>> {
+		let caller_address = self.blockchain().get_caller();
+		let caller_id = self.user_mapper().get_user_id(&caller_address);
+		let caller_role = self.get_user_id_to_role(caller_id);
+		require!(caller_role.can_sign(), "only validators can check events");
+
+		let mut event_mapper = self.event_mapper();
+		let info = event_mapper.get(&id);
+		if info.is_none() {
+			return sc_error!("Invalid ID!");
+		}
+		let mut info = info.unwrap();
+
+		info.read_cnt += 1;
+		if info.read_cnt == self.num_validators().get() {
+			//event_mapper.remove(&id).unwrap();
+		} else {
+			event_mapper.insert(id, info.clone()).unwrap();
+		}
+
+		return Ok(info);
+	}
+
 	#[init]
-	fn init(&self, token: BoxedBytes, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
+	fn init(&self, token: TokenIdentifier, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
 		require!(
 			!validators.is_empty(),
 			"validators cannot be empty on init, no-one would be able to propose"
@@ -71,14 +103,27 @@ pub trait Multisig {
 		self.num_validators().set(&validators.len());
 
 		self.token().set(&token);
+		self.event_ident().set(&Self::BigUint::zero());
 	
 		Ok(())
 	}
 
-	/// TODO
 	#[payable("*")]
-	#[endpoint(freeze)]
-	fn freeze(&self) {}
+	#[endpoint(withdraw)]
+	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<Self::BigUint> {
+		require!(value > 0, "Value must be > 0");
+		require!(token == self.token().get(), "Invalid token!");
+
+		self.send().esdt_local_burn(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &value);
+
+		let ident = self.event_ident().update(|event| { 
+			event.add_assign(Self::BigUint::from(1u64));
+			event.clone()
+		});
+		self.event_mapper().insert(ident.clone(), TransferEvent::new(to, value));
+	
+		Ok(ident)
+	}
 
 	#[payable("*")]
 	#[endpoint(deposit)]
@@ -260,7 +305,7 @@ pub trait Multisig {
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(self.blockchain().get_gas_left(), token.as_slice(), &amount);
+				self.send().esdt_local_mint(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
