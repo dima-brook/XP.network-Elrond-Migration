@@ -7,7 +7,7 @@ import { ConcreteJson } from './types';
 export type PolkadotHelper = {
     readonly api: ApiPromise;
     readonly freezer: ContractPromise;
-    readonly alice: KeyringPair
+    readonly alice: KeyringPair // TODO: Switch to proper keyringpair
 };
 
 export async function newHelper(
@@ -19,7 +19,7 @@ export async function newHelper(
     const api = await ApiPromise.create({ provider: provider });
     const freezer = new ContractPromise(api, freezer_abi, contract_addr);
 
-    const keyring = new Keyring({ type: 'sr25519', ss58Format: 2 });
+    const keyring = new Keyring();
     
 
     let ret = {
@@ -27,7 +27,7 @@ export async function newHelper(
         freezer: freezer,
         alice: keyring.addFromUri("//Alice")
     };
-    await subscribe(ret);
+    await subscribe(ret).catch(() => {});
 
     return ret;
 }
@@ -40,9 +40,9 @@ export async function subscribe(helper: PolkadotHelper): Promise<void> {
         });
 }
 
-export async function pop(helper: PolkadotHelper, to: string, value: BigInt): Promise<void> {
+export async function pop(helper: PolkadotHelper, id: BigInt, to: string, value: BigInt): Promise<void> {
     await helper.freezer.tx
-        .pop({ value: 0, gasLimit: -1 }, 0, to, value)
+        .pop({ value: 0, gasLimit: -1 }, id, to, value)
         .signAndSend(helper.alice, (result) => {
             console.log(`pop tx: ${result.status.hash}`);
         });
