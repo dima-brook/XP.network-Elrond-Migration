@@ -66,7 +66,7 @@ pub mod freezer {
         pub fn pop(&mut self, action_id: String, to: AccountId, value: Balance) -> bool {
             let caller = self.env().caller();
             if self.validators.get(&caller).is_none() {
-                return false;
+                panic!("not a validator!")
             }
 
             let ref mut valids = self.pop_action.entry(action_id.clone())
@@ -89,7 +89,6 @@ pub mod freezer {
         /// Subscribe to events & become a validator
         /// TODO: Proper implementation
         #[ink(message)]
-        #[ink(payable)]
         pub fn subscribe(&mut self) {
             self.validators.insert(self.env().caller(), ());
         }
@@ -97,11 +96,11 @@ pub mod freezer {
         /// Number of validators
         /// only for debugging
         #[ink(message)]
-        pub fn validator_cnt(&mut self) -> u32 {
+        pub fn validator_cnt(&self) -> u32 {
             self.validators.len()
         }
 
-        fn pop_cnt(&mut self) -> u32 {
+        fn pop_cnt(&self) -> u32 {
             self.pop_action.len()
         }
     }

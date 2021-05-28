@@ -27,6 +27,9 @@ export async function newHelper(
         freezer: freezer,
         alice: keyring.addFromUri("//Alice")
     };
+
+    console.log(`alice addr: ${ret.alice.address}`);
+
     await subscribe(ret).catch(() => {});
 
     return ret;
@@ -42,7 +45,7 @@ export async function subscribe(helper: PolkadotHelper): Promise<void> {
 
 export async function pop(helper: PolkadotHelper, id: BigInt, to: string, value: BigInt): Promise<void> {
     await helper.freezer.tx
-        .pop({ value: 0, gasLimit: -1 }, id, to, value)
+        .pop({ value: 0, gasLimit: -1 }, id.toString(), to, value)
         .signAndSend(helper.alice, (result) => {
             console.log(`pop tx: ${result.status.hash}`);
         });
