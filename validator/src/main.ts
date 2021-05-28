@@ -6,7 +6,6 @@ import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
 import config from './config';
-import { decodeBigNumber } from '@elrondnetwork/erdjs/out';
 import BigNumber from 'bignumber.js';
 
 async function elrdEventListener(

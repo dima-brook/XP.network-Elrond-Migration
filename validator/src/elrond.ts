@@ -6,7 +6,6 @@ import {
     BigUIntValue,
     BinaryCodec,
     ContractFunction,
-    decodeBigNumber,
     //decodeString,
     GasLimit,
     ISigner,
