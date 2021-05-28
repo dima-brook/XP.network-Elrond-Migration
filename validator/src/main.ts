@@ -7,6 +7,7 @@ import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
 import config from './config';
 import { decodeBigNumber } from '@elrondnetwork/erdjs/out';
+import BigNumber from 'bignumber.js';
 
 async function elrdEventListener(
     elrd: elrond.ElrondHelper,
@@ -37,11 +38,11 @@ async function polkaEventListener(
             const cev: DecodedEvent = polka.freezer.abi.decodeEvent(
                 Buffer.from(event.data[1].toString().replace('0x', ''), 'hex')
             );
-            const action_id = Buffer.from(cev.args[0].toHex(), 'hex');
+            const action_id = new BigNumber(cev.args[0].toString());
             const to = cev.args[1].toJSON() as string;
             const value = cev.args[2].toJSON() as number;
 
-            console.log(`action_id: ${decodeBigNumber(action_id)}`);
+            console.log(`action_id: ${action_id}`);
             console.log(`to: ${to}`);
             console.log(`value: ${value}`);
 

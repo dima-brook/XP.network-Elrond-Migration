@@ -92,7 +92,7 @@ export async function getDepositEvent(
 
 export async function verifyEmitMint(
     helper: ElrondHelper,
-    action_id: Buffer,
+    action_id: BigNumber,
     to: string,
     value: number
 ): Promise<Transaction> {
@@ -105,7 +105,7 @@ export async function verifyEmitMint(
         // fn validate_send_xp(action_id: BigUint, to: Address, amount: BigUint, #[var_args] opt_data: OptionalArg<BoxedBytes>,)
         data: TransactionPayload.contractCall()
             .setFunction(new ContractFunction('validateSendXp'))
-            .addArg(new BigUIntValue(decodeBigNumber(action_id)))
+            .addArg(new BigUIntValue(action_id))
             .addArg(new AddressValue(new Address(to)))
             .addArg(new U32Value(value))
             .build(),
