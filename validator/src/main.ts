@@ -15,7 +15,7 @@ async function elrdEventListener(
     elrd.eventSocket.on("elrond:emitted_event", async (id) => {
         console.log(`received event ${id}`);
         const ev_info = await elrond.getDepositEvent(elrd, id);
-        polkadot.pop(polka, id, ev_info[0], ev_info[1]).catch(() => {})
+        await polkadot.pop(polka, id, ev_info[0], ev_info[1]);
     })
 }
 
