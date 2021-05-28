@@ -25,7 +25,7 @@ export async function newHelper(
     let ret = {
         api: api,
         freezer: freezer,
-        alice: keyring.addFromUri("//Alice")
+        alice: keyring.addFromMnemonic("sphere snake term obey wonder dignity churn april pretty lawsuit trigger oyster")
     };
 
     console.log(`alice addr: ${ret.alice.address}`);
