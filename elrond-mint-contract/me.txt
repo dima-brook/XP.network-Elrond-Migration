@@ -1,0 +1,15 @@
+erdpy tx new --pem="./wallets/users/alice.pem" \
+    --proxy="http://127.0.0.1:7950" \
+    --data="setSpecialRole@585044542D386663636165@00000000000000000500950495a6394c500dc516fe32b0ecce45623b9c4a69e1@45534454526F6C654C6F63616C4D696E74@45534454526F6C654C6F63616C4275726E" \
+    --recall-nonce --receiver=erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzllls8a5w6u \
+    --gas-limit=500000000 --value 0 --send
+
+
+
+
+
+erdpy --verbose contract call erd1qqqqqqqqqqqqqpgqt5w9vlsdcmu5t5wvzdj8xnp42kqm4x3ud8ssrk9q8s \
+  --gas-limit 80000000 --function "ESDTTransfer" --value 0 --pem "./wallets/users/alice.pem" \
+  --recall-nonce --arguments "0x585044542D653937653732" 1000000000000000 "0x7769746864726177" "0x3547727776614546357A58623236467A397263517044575335374374455248704E6568584350634E6F48474B75745159" \
+  --send
+
