@@ -2,9 +2,11 @@ import {
     Account,
     Address,
     AddressValue,
+    Balance,
     BigUIntType,
     BigUIntValue,
     BinaryCodec,
+    BytesValue,
     ContractFunction,
     //decodeString,
     GasLimit,
@@ -108,6 +110,43 @@ export async function verifyEmitMint(
             .addArg(new AddressValue(new Address(to)))
             .addArg(new U32Value(value))
             .build(),
+    });
+
+    helper.signer.sign(tx);
+    await tx.send(helper.provider);
+
+    return tx;
+}
+
+export async function verifyEmitScCall(
+    helper: ElrondHelper,
+    value: number,
+    action_id: BigNumber,
+    target: string,
+    endpoint: string,
+    args?: string[], // List of arguments
+): Promise<Transaction> {
+    await helper.sender.sync(helper.provider)
+
+    // fn validate_sc_call(action_id: BigUint, to: Address, endpoint: BoxedBytes, #[var_args] args: VarArgs<BoxedBytes>,)
+    let payloadBuilder = TransactionPayload.contractCall()
+        .setFunction(new ContractFunction("validateSCCall"))
+        .addArg(new BigUIntValue(action_id))
+        .addArg(new AddressValue(new Address(target)))
+        .addArg(BytesValue.fromUTF8(endpoint))
+
+    for (const buf of args ?? []) {
+        payloadBuilder = payloadBuilder.addArg(BytesValue.fromHex(buf));
+    }
+
+    console.log(`args: ${JSON.stringify(payloadBuilder)}`)
+
+    const tx = new Transaction({
+        receiver: helper.mintContract,
+        nonce: helper.sender.nonce,
+        gasLimit: new GasLimit(80000000),
+        data: payloadBuilder.build(),
+        value: Balance.egld(value)
     });
 
     helper.signer.sign(tx);

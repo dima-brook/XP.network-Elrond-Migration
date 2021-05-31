@@ -6,16 +6,15 @@ import * as elrond from './elrond';
 import * as freezer_abi from './freezer_abi.json';
 import * as polkadot from './polkadot';
 import config from './config';
-import BigNumber from 'bignumber.js';
+import { polkaTransferEventHandler, elrondTransferEventHandler, polkaScCallEventHandler } from "./handlers/liquidity"
 
 async function elrdEventListener(
     elrd: elrond.ElrondHelper,
     polka: polkadot.PolkadotHelper
 ): Promise<void> {
-    elrd.eventSocket.on("elrond:emitted_event", async (id) => {
-        console.log(`received event ${id}`);
-        const ev_info = await elrond.getDepositEvent(elrd, id);
-        await polkadot.pop(polka, id, ev_info[0], ev_info[1]);
+    elrd.eventSocket.on("elrond:transfer_event", async (id) => {
+        await elrondTransferEventHandler(elrd, polka, id)
+        .catch((e) => console.log("Invalid event emitted: ", e))
     })
 }
 
@@ -37,16 +36,17 @@ async function polkaEventListener(
             const cev: DecodedEvent = polka.freezer.abi.decodeEvent(
                 Buffer.from(event.data[1].toString().replace('0x', ''), 'hex')
             );
-            const action_id = new BigNumber(cev.args[0].toString());
-            const to = cev.args[1].toJSON() as string;
-            const value = cev.args[2].toJSON() as number;
-
-            console.log(`action_id: ${action_id}`);
-            console.log(`to: ${to}`);
-            console.log(`value: ${value}`);
-
-            const tx = await elrond.verifyEmitMint(elrd, action_id, to, value);
-            console.log(`Hash: ${tx.getHash().toString()}`);
+            switch(cev.event.identifier) {
+                case "Transfer":
+                    await polkaTransferEventHandler(polka, elrd, cev);
+                    break;
+                case "ScCall":
+                    await polkaScCallEventHandler(polka, elrd, cev);
+                    break;
+                default:
+                    console.log("WARN: unhandeled event: ", cev.event.identifier);
+                    break;
+            }
         });
     });
 }

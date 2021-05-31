@@ -11,9 +11,9 @@ const config = {
         'erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th',
     // Elrond minter contract address
     elrond_minter:
-        'erd1qqqqqqqqqqqqqpgqt5w9vlsdcmu5t5wvzdj8xnp42kqm4x3ud8ssrk9q8s',
+        'erd1qqqqqqqqqqqqqpgqfzydqmdw7m2vazsp6u5p95yxz76t2p9rd8ss0zp9ts',
     // Substrate Freezer Contract address
-    xp_freezer: '5HdvamL8whamAX7xoX6yE7sFf5g6NuqoGHPEq8NnXa4P7Kz6',
+    xp_freezer: '5GL4jG9UekN18KZkGWPrqkoNkmdXchgL1wp2yr6WwnSAqCpE',
     // Workaround Elrond Event websocket
     elrond_ev_socket: "ws://localhost:3000"
 };
