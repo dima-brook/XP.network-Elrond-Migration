@@ -114,7 +114,7 @@ pub trait Multisig {
 		require!(value > 0, "Value must be > 0");
 		require!(token == self.token().get(), "Invalid token!");
 
-		self.send().esdt_local_burn(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &value);
+		self.send().esdt_local_burn(&token, &value);
 
 		let ident = self.event_ident().update(|event| { 
 			event.add_assign(Self::BigUint::from(1u64));
@@ -305,7 +305,7 @@ pub trait Multisig {
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &amount);
+				self.send().esdt_local_mint(&token, &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
