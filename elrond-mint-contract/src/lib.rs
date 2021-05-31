@@ -74,7 +74,7 @@ pub trait Multisig {
 
 		info.read_cnt += 1;
 		if info.read_cnt == self.num_validators().get() {
-			//event_mapper.remove(&id).unwrap();
+			event_mapper.remove(&id).unwrap();
 		} else {
 			event_mapper.insert(id, info.clone()).unwrap();
 		}
@@ -166,6 +166,10 @@ pub trait Multisig {
 				valid_signers_count = signers.len();
 			});
 
+		if ret {
+			return Ok(PerformActionResult::Pending);
+		}
+
 		let min_valid = self.min_valid().get();
 
 		if valid_signers_count == min_valid {
@@ -179,7 +183,7 @@ pub trait Multisig {
 			};
 		}
 	
-		Ok(PerformActionResult::Nothing)
+		Ok(PerformActionResult::Pending)
 	}
 
 	/// Check if an action was completed
@@ -247,6 +251,27 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::SendXP { to, amount, data })
 	}
 
+	#[payable("EGLD")]
+	#[endpoint(validateSCCall)]
+	fn validate_sc_call(
+		&self,
+		#[payment] amount: Self::BigUint,
+		uuid: Self::BigUint,
+		to: Address,
+		endpoint: BoxedBytes,
+		#[var_args] args: VarArgs<BoxedBytes>,
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
+		self.validate_action(uuid,
+			Action::SCCall {
+				to,
+				amount,
+				endpoint,
+				args: args.into_vec(),
+			}
+		)
+	}
+
+
 	/// Can be used to:
 	/// - create new user (board member / proposer)
 	/// - remove user (board member / proposer)
@@ -277,10 +302,10 @@ pub trait Multisig {
 
 	fn perform_action(&self, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		match action {
-			Action::Nothing => Ok(PerformActionResult::Nothing),
+			Action::Nothing => Ok(PerformActionResult::Done),
 			Action::AddValidator(addr) => {
 				self.change_user_role(addr, UserRole::Validator);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::RemoveUser(user_address) => {
 				self.change_user_role(user_address, UserRole::None);
@@ -293,7 +318,7 @@ pub trait Multisig {
 					self.min_valid().get() <= num_board_members,
 					"quorum cannot exceed board size"
 				);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::ChangeMinValid(new_quorum) => {
 				require!(
@@ -301,7 +326,7 @@ pub trait Multisig {
 					"quorum cannot exceed board size"
 				);
 				self.min_valid().set(&new_quorum);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
@@ -314,6 +339,22 @@ pub trait Multisig {
 					data
 				}))
 			},
+			Action::SCCall {
+				to,
+				amount,
+				endpoint,
+				args
+			} => {
+				let mut contract_call_raw =
+					ContractCall::<Self::SendApi, ()>::new(self.send(), to, endpoint)
+						.with_token_transfer(TokenIdentifier::egld(), amount);
+				for arg in args {
+					contract_call_raw.push_argument_raw_bytes(arg.as_slice());
+				}
+				Ok(PerformActionResult::AsyncCall(
+					contract_call_raw.async_call(),
+				))
+			}
 		}
 	}
 }

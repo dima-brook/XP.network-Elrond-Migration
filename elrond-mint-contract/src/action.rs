@@ -2,7 +2,7 @@
 use elrond_wasm::{
 	api::{BigUintApi, EndpointFinishApi, SendApi},
 	io::EndpointResult,
-	types::{Address, BoxedBytes, OptionalResult, SendToken, Vec},
+	types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendToken, Vec},
 };
 
 elrond_wasm::derive_imports!();
@@ -18,6 +18,12 @@ pub enum Action<BigUint: BigUintApi> {
 		to: Address,
 		amount: BigUint,
 		data: BoxedBytes,
+	},
+	SCCall {
+		to: Address,
+		amount: BigUint,
+		endpoint: BoxedBytes,
+		args: Vec<BoxedBytes>,
 	},
 }
 
@@ -47,8 +53,10 @@ pub enum PerformActionResult<SA>
 where
 	SA: SendApi + 'static,
 {
-	Nothing,
+	Done,
+	Pending,
 	SendXP(SendToken<SA>),
+	AsyncCall(AsyncCall<SA>)
 }
 
 impl<SA> EndpointResult for PerformActionResult<SA>
@@ -62,8 +70,9 @@ where
 		FA: EndpointFinishApi + Clone + 'static,
 	{
 		match self {
-			PerformActionResult::Nothing => (),
+			PerformActionResult::Done | PerformActionResult::Pending=> (),
 			PerformActionResult::SendXP(send_token) => send_token.finish(api),
+			PerformActionResult::AsyncCall(async_call) => async_call.finish(api)
 		}
 	}
 }
