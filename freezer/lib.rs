@@ -6,7 +6,7 @@ extern crate alloc;
 #[ink::contract]
 pub mod freezer {
     use bech32;
-    use alloc::string::String;
+    use alloc::{vec::Vec, string::String};
 
     /// Contract Storage
     /// Stores a list of validators
@@ -28,6 +28,14 @@ pub mod freezer {
         value: Balance
     }
 
+    #[ink(event)]
+    pub struct ScCall {
+        action_id: u128,
+        to: String,
+        endpoint: String,
+        args: Vec<Vec<u8>>
+    }
+
     // to, value, num_validators
     type PopInfo = (AccountId, Balance, u16);
 
@@ -43,11 +51,10 @@ pub mod freezer {
 
         /// Emit a transfer event while locking
         /// existing coins
-        /// TODO: Support elrond addr
         #[ink(message)]
         #[ink(payable)]
         pub fn send(&mut self, to: String) {
-            bech32::decode(&to).unwrap();
+            bech32::decode(&to).expect("Invalid address!");
             let val = self.env().transferred_balance();
             if val == 0 {
                 panic!("Value must be > 0!")
@@ -57,6 +64,20 @@ pub mod freezer {
                 action_id: self.last_action,
                 to,
                 value: val,
+            } )
+        }
+
+        /// Emit an SCCall event
+        /// TODO: Charge some token amount for this
+        #[ink(message)]
+        pub fn send_sc_call(&mut self, target_contract: String, endpoint: String, args: Vec<Vec<u8>>) {
+            bech32::decode(&target_contract).expect("Invalid address!");
+            self.last_action += 1;
+            self.env().emit_event( ScCall {
+                action_id: self.last_action,
+                to: target_contract,
+                endpoint,
+                args
             } )
         }
 
