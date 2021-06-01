@@ -1,0 +1,21 @@
+{
+    "encoded": "41rWuygNmjGNDYk17bWVzv0Zwe++UFNdpOIQJB8MJbEAgAAAAQAAAAgAAACQuXtnH/EB9XCIQxS6tB2DSlQQEyDyg/5ZjoEbiMBf5FPOFQr3k/eDmofIO8mHe1OvFZUIU96RMXF717hrEm1lVYq14NZCypHfcUH/3RGi0Q8uJEc8D4DETmUF4nSd4Bwtip2GhE2534xUpzoRpMVYAhSIi6DsyS9Dk+INOy7+6ajIQBnSxq9CwQXXG2FZKobbIXvq/UHnaq3RUxAO",
+    "encoding": {
+        "content": [
+            "pkcs8",
+            "sr25519"
+        ],
+        "type": [
+            "scrypt",
+            "xsalsa20-poly1305"
+        ],
+        "version": "3"
+    },
+    "address": "5Gy8nktWvwW2KLu6fk84FHagvxu2B2Go5JRgHJt6aKXVwm4g",
+    "meta": {
+        "isHardware": false,
+        "name": "TestAccount",
+        "tags": [],
+        "whenCreated": 1622211523245
+    }
+}
