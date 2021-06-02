@@ -5,7 +5,7 @@ mod events;
 mod user_role;
 
 use action::{Action, ActionInfo, PerformActionResult};
-use events::TransferEvent;
+use events::*;
 use user_role::UserRole;
 use elrond_wasm::String;
 
@@ -46,7 +46,7 @@ pub trait Multisig {
 	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
 
 	#[storage_mapper("events")]
-	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, TransferEvent<Self::BigUint>>;
+	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
 
 	#[storage_mapper("event_ident")]
 	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
@@ -59,7 +59,7 @@ pub trait Multisig {
 	}
 
 	#[endpoint(eventRead)]
-	fn event_read(&self, id: Self::BigUint) -> SCResult<TransferEvent<Self::BigUint>> {
+	fn event_read(&self, id: Self::BigUint) -> SCResult<EventInfo<Self::BigUint>> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
 		let caller_role = self.get_user_id_to_role(caller_id);
@@ -120,9 +120,20 @@ pub trait Multisig {
 			event.add_assign(Self::BigUint::from(1u64));
 			event.clone()
 		});
-		self.event_mapper().insert(ident.clone(), TransferEvent::new(to, value));
+		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Unfreeze { to, value }));
 	
 		Ok(ident)
+	}
+
+	#[endpoint(sendScCall)]
+	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) -> Self::BigUint {
+		let ident = self.event_ident().update(|event| {
+			event.add_assign(Self::BigUint::from(1u64));
+			event.clone()
+		});
+		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Rpc { to, value: Self::BigUint::zero(), endpoint, args: args.into_vec() }));
+
+		ident
 	}
 
 	#[payable("*")]

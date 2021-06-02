@@ -1,19 +1,35 @@
-use elrond_wasm::{String, api::BigUintApi};
+use elrond_wasm::{
+    String,
+	api::BigUintApi,
+	types::{BoxedBytes, Vec},
+};
 
 elrond_wasm::derive_imports!();
 
+#[derive(Clone, NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+pub enum Event<BigUint: BigUintApi> {
+    Unfreeze {
+        to: String,
+        value: BigUint,
+    },
+    Rpc {
+        to: String,
+        value: BigUint,
+        endpoint: String,
+        args: Vec<BoxedBytes>,
+    }
+}
+
 #[derive(TopEncode, TopDecode, TypeAbi, Clone)]
-pub struct TransferEvent<BigUint: BigUintApi> {
-    pub to: String,
-    pub value: BigUint,
+pub struct EventInfo<BigUint: BigUintApi> {
+    pub event: Event<BigUint>,
     pub read_cnt: usize
 }
 
-impl<BigUint: BigUintApi> TransferEvent<BigUint> {
-    pub fn new(to: String, value: BigUint) -> Self {
+impl<BigUint: BigUintApi> EventInfo<BigUint> {
+    pub fn new(event: Event<BigUint>) -> Self {
         Self {
-            to,
-            value,
+            event,
             read_cnt: 0
         }
     }
