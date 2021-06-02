@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0xd75cc19b7f6f0d1c655e3580817acf09ef86c5648b0e842cf6965f5a9f959099",
+    "hash": "0xf10b6d8b614d84b452488e4425c4059e9586f4610fad2e4b9323cb197bf5660c",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -35,7 +35,7 @@
               "displayName": [
                 "u128"
               ],
-              "type": 14
+              "type": 15
             }
           },
           {
@@ -57,7 +57,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 14
+              "type": 15
             }
           }
         ],
@@ -77,7 +77,7 @@
               "displayName": [
                 "u128"
               ],
-              "type": 14
+              "type": 15
             }
           },
           {
@@ -110,7 +110,7 @@
               "displayName": [
                 "Vec"
               ],
-              "type": 16
+              "type": 17
             }
           }
         ],
@@ -169,12 +169,13 @@
               "displayName": [
                 "Vec"
               ],
-              "type": 16
+              "type": 17
             }
           }
         ],
         "docs": [
-          " Emit an SCCall event"
+          " Emit an SCCall event",
+          " TODO: Charge some token amount for this"
         ],
         "mutates": true,
         "name": [
@@ -210,7 +211,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 14
+              "type": 15
             }
           }
         ],
@@ -223,13 +224,63 @@
           "pop"
         ],
         "payable": false,
-        "returnType": {
-          "displayName": [
-            "bool"
-          ],
-          "type": 18
-        },
+        "returnType": null,
         "selector": "0x5dbd4378"
+      },
+      {
+        "args": [
+          {
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "to",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "name": "endpoint",
+            "type": {
+              "displayName": [],
+              "type": 16
+            }
+          },
+          {
+            "name": "args",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 17
+            }
+          }
+        ],
+        "docs": [],
+        "mutates": true,
+        "name": [
+          "sc_call_verify"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x845f21ef"
       },
       {
         "args": [],
@@ -433,7 +484,7 @@
           "layout": {
             "cell": {
               "key": "0x0400000002000000000000000000000000000000000000000000000000000000",
-              "ty": 14
+              "ty": 15
             }
           },
           "name": "last_action"
@@ -666,12 +717,79 @@
     },
     {
       "def": {
-        "tuple": [
-          4,
-          14,
-          15
-        ]
-      }
+        "composite": {
+          "fields": [
+            {
+              "name": "action",
+              "type": 14,
+              "typeName": "Action"
+            },
+            {
+              "name": "validators",
+              "type": 2,
+              "typeName": "u32"
+            }
+          ]
+        }
+      },
+      "path": [
+        "freezer",
+        "freezer",
+        "ActionInfo"
+      ]
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "name": "to",
+                  "type": 4,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "value",
+                  "type": 15,
+                  "typeName": "Balance"
+                }
+              ],
+              "name": "Unfreeze"
+            },
+            {
+              "fields": [
+                {
+                  "name": "to",
+                  "type": 4,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "value",
+                  "type": 15,
+                  "typeName": "Balance"
+                },
+                {
+                  "name": "endpoint",
+                  "type": 16,
+                  "typeName": "[u8; 4]"
+                },
+                {
+                  "name": "args",
+                  "type": 17,
+                  "typeName": "Vec<Vec<u8>>"
+                }
+              ],
+              "name": "RpcCall"
+            }
+          ]
+        }
+      },
+      "path": [
+        "freezer",
+        "freezer",
+        "Action"
+      ]
     },
     {
       "def": {
@@ -680,13 +798,16 @@
     },
     {
       "def": {
-        "primitive": "u16"
+        "array": {
+          "len": 4,
+          "type": 6
+        }
       }
     },
     {
       "def": {
         "sequence": {
-          "type": 17
+          "type": 18
         }
       }
     },
@@ -695,11 +816,6 @@
         "sequence": {
           "type": 6
         }
-      }
-    },
-    {
-      "def": {
-        "primitive": "bool"
       }
     }
   ]
