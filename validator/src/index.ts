@@ -1,11 +1,9 @@
 import * as fs from 'fs';
-
 import { io } from 'socket.io-client';
-import { emitEvents } from "./chain_handler";
-import config from './config';
-import * as freezer_abi from './freezer_abi.json';
-import { ElrondHelper } from './handlers/elrond';
-import { PolkadotHelper } from './handlers/polkadot';
+
+import { ElrondHelper, emitEvents, PolkadotHelper } from "validator";
+import config from "./config"
+import * as freezer_abi from "./freezer_abi.json"
 
 const main = async () => {
     const private_key = await fs.promises.readFile(config.private_key, "utf-8");
@@ -25,7 +23,7 @@ const main = async () => {
 
     console.log('READY TO LISTEN EVENTS!');
 
-    emitEvents(polka, elrd);
+    emitEvents(elrd, polka);
 };
 
 main();

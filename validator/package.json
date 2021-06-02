@@ -1,5 +1,5 @@
 {
-  "name": "validator",
+  "name": "validator-elrond",
   "version": "1.0.0",
   "description": "XP Freeze validator and elrond minter",
   "main": "dist/index.js",
@@ -8,7 +8,8 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && node dist/index.js"
   },
   "engines": {
     "node": ">=10"
@@ -22,6 +23,7 @@
     "@polkadot/types": "^3.11.1",
     "bignumber.js": "^9.0.1",
     "socket.io-client": "^4.1.2",
+    "validator": "git+https://github.com/xp-network/migration-validator#master",
     "yargs": "^17.0.1"
   },
   "devDependencies": {

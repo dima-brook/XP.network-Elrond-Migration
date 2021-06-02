@@ -5,7 +5,7 @@ const config = {
     elrond_node: 'http://localhost:7950',
     // Private Key File
     private_key:
-        '../XP.network-Elrond-Migration/elrond-mint-contract/wallets/users/alice.pem',
+        '../elrond-mint-contract/wallets/users/alice.pem',
     // Elrond Address (TODO: Derive from pk automatically)
     elrond_sender:
         'erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th',

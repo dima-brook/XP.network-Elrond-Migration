@@ -1,0 +1,4 @@
+[submodule "validator/src/lib/migration-validator"]
+	path = validator/src/lib/migration-validator
+	url = https://github.com/xp-network/migration-validator
+	branch = master
