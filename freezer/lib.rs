@@ -41,7 +41,7 @@ pub mod freezer {
         action_id: u128,
         to: String,
         endpoint: String,
-        args: Vec<Vec<u8>>
+        args: Vec<Vec<u8>> // TODO: Multiple Args
     }
 
     #[derive(Clone, Debug, PartialEq, Encode, Decode, SpreadLayout, PackedLayout)]
@@ -55,7 +55,7 @@ pub mod freezer {
             to: AccountId,
             value: Balance,
             endpoint: [u8; 4],
-            args: Vec<Vec<u8>>
+            args: Option<u32>
         }
     }
 
@@ -130,29 +130,28 @@ pub mod freezer {
         fn exec_action(&mut self, action: Action) {
             match action {
                 Action::Unfreeze { to, value } => self.env().transfer(to, value).unwrap(),
-                Action::RpcCall { to, value, endpoint, mut args } => {
-                    let gas = self.env().gas_left();
-                    if args.len() > 0 {
+                Action::RpcCall { to, value, endpoint, args } => {
+                    if let Some(arg) = args {
                         let exargs = ExecutionInput::new(Selector::new(endpoint))
-                            .push_arg(args.remove(0)); // TODO: Support multiple args
+                            .push_arg(arg.clone()); // TODO: Support multiple args
 
-                        build_call::<ink_env::DefaultEnvironment>()
-                            .callee(to)
-                            .gas_limit(gas as u64)
-                            .transferred_value(value)
-                            .exec_input(exargs)
-                            .returns::<()>()
-                            .fire()
-                            .unwrap();
+                        self.env().invoke_contract(
+                            &build_call()
+                                .callee(to)
+                                .transferred_value(value)
+                                .exec_input(exargs)
+                                .returns::<()>()
+                                .params()
+                        ).unwrap();
                     } else {
-                        build_call::<ink_env::DefaultEnvironment>()
-                            .callee(to)
-                            .gas_limit(gas as u64)
-                            .transferred_value(value)
-                            .exec_input(ExecutionInput::new(Selector::new(endpoint)))
-                            .returns::<()>()
-                            .fire()
-                            .unwrap()
+                        self.env().invoke_contract(
+                            &build_call()
+                                .callee(to)
+                                .transferred_value(value)
+                                .exec_input(ExecutionInput::new(Selector::new(endpoint)))
+                                .returns::<()>()
+                                .params()
+                        ).unwrap();
                     }
                 }
             }
@@ -189,7 +188,7 @@ pub mod freezer {
         }
 
         #[ink(message)]
-        pub fn sc_call_verify(&mut self, action_id: String, to: AccountId, value: Balance, endpoint: [u8; 4], args: Vec<Vec<u8>>) {
+        pub fn sc_call_verify(&mut self, action_id: String, to: AccountId, value: Balance, endpoint: [u8; 4], args: Option<u32>) {
             self.verify_action(action_id, Action::RpcCall { to, value, endpoint, args })
         }
 
