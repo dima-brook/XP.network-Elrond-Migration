@@ -5,7 +5,7 @@ mod events;
 mod user_role;
 
 use action::{Action, ActionInfo, PerformActionResult};
-use events::TransferEvent;
+use events::*;
 use user_role::UserRole;
 use elrond_wasm::String;
 
@@ -46,7 +46,7 @@ pub trait Multisig {
 	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
 
 	#[storage_mapper("events")]
-	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, TransferEvent<Self::BigUint>>;
+	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
 
 	#[storage_mapper("event_ident")]
 	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
@@ -59,7 +59,7 @@ pub trait Multisig {
 	}
 
 	#[endpoint(eventRead)]
-	fn event_read(&self, id: Self::BigUint) -> SCResult<TransferEvent<Self::BigUint>> {
+	fn event_read(&self, id: Self::BigUint) -> SCResult<EventInfo<Self::BigUint>> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
 		let caller_role = self.get_user_id_to_role(caller_id);
@@ -74,7 +74,7 @@ pub trait Multisig {
 
 		info.read_cnt += 1;
 		if info.read_cnt == self.num_validators().get() {
-			//event_mapper.remove(&id).unwrap();
+			event_mapper.remove(&id).unwrap();
 		} else {
 			event_mapper.insert(id, info.clone()).unwrap();
 		}
@@ -114,15 +114,26 @@ pub trait Multisig {
 		require!(value > 0, "Value must be > 0");
 		require!(token == self.token().get(), "Invalid token!");
 
-		self.send().esdt_local_burn(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &value);
+		self.send().esdt_local_burn(&token, &value);
 
 		let ident = self.event_ident().update(|event| { 
 			event.add_assign(Self::BigUint::from(1u64));
 			event.clone()
 		});
-		self.event_mapper().insert(ident.clone(), TransferEvent::new(to, value));
+		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Unfreeze { to, value }));
 	
 		Ok(ident)
+	}
+
+	#[endpoint(sendScCall)]
+	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) -> Self::BigUint {
+		let ident = self.event_ident().update(|event| {
+			event.add_assign(Self::BigUint::from(1u64));
+			event.clone()
+		});
+		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Rpc { to, value: Self::BigUint::zero(), endpoint, args: args.into_vec() }));
+
+		ident
 	}
 
 	#[payable("*")]
@@ -166,6 +177,10 @@ pub trait Multisig {
 				valid_signers_count = signers.len();
 			});
 
+		if ret {
+			return Ok(PerformActionResult::Pending);
+		}
+
 		let min_valid = self.min_valid().get();
 
 		if valid_signers_count == min_valid {
@@ -179,7 +194,7 @@ pub trait Multisig {
 			};
 		}
 	
-		Ok(PerformActionResult::Nothing)
+		Ok(PerformActionResult::Pending)
 	}
 
 	/// Check if an action was completed
@@ -247,6 +262,27 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::SendXP { to, amount, data })
 	}
 
+	#[payable("EGLD")]
+	#[endpoint(validateSCCall)]
+	fn validate_sc_call(
+		&self,
+		#[payment] amount: Self::BigUint,
+		uuid: Self::BigUint,
+		to: Address,
+		endpoint: BoxedBytes,
+		#[var_args] args: VarArgs<BoxedBytes>,
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
+		self.validate_action(uuid,
+			Action::SCCall {
+				to,
+				amount,
+				endpoint,
+				args: args.into_vec(),
+			}
+		)
+	}
+
+
 	/// Can be used to:
 	/// - create new user (board member / proposer)
 	/// - remove user (board member / proposer)
@@ -277,10 +313,10 @@ pub trait Multisig {
 
 	fn perform_action(&self, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		match action {
-			Action::Nothing => Ok(PerformActionResult::Nothing),
+			Action::Nothing => Ok(PerformActionResult::Done),
 			Action::AddValidator(addr) => {
 				self.change_user_role(addr, UserRole::Validator);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::RemoveUser(user_address) => {
 				self.change_user_role(user_address, UserRole::None);
@@ -293,7 +329,7 @@ pub trait Multisig {
 					self.min_valid().get() <= num_board_members,
 					"quorum cannot exceed board size"
 				);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::ChangeMinValid(new_quorum) => {
 				require!(
@@ -301,11 +337,11 @@ pub trait Multisig {
 					"quorum cannot exceed board size"
 				);
 				self.min_valid().set(&new_quorum);
-				Ok(PerformActionResult::Nothing)
+				Ok(PerformActionResult::Done)
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(self.blockchain().get_gas_left(), token.as_esdt_identifier(), &amount);
+				self.send().esdt_local_mint(&token, &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
@@ -314,6 +350,22 @@ pub trait Multisig {
 					data
 				}))
 			},
+			Action::SCCall {
+				to,
+				amount,
+				endpoint,
+				args
+			} => {
+				let mut contract_call_raw =
+					ContractCall::<Self::SendApi, ()>::new(self.send(), to, endpoint)
+						.with_token_transfer(TokenIdentifier::egld(), amount);
+				for arg in args {
+					contract_call_raw.push_argument_raw_bytes(arg.as_slice());
+				}
+				Ok(PerformActionResult::AsyncCall(
+					contract_call_raw.async_call(),
+				))
+			}
 		}
 	}
 }

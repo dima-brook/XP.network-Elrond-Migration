@@ -6,10 +6,10 @@ const port = 8000;
 const app = express();
 const io = socket.socketMain();
 
-app.post('/newevent', (req, res) => {
+app.post('/event/transfer', (req, res) => {
     const id = BigInt(req.header("id"));
 
-    io.emit("elrond:emitted_event", id.toString());
+    io.emit("elrond:transfer_event", id.toString());
     res.send('{"status": "ok"}')
 });
 

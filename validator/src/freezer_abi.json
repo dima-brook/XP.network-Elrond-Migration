@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0x920a6323163b0060bbf38df08efb1e522a73f88e0453900c7a84a011c1f49507",
+    "hash": "0xf10b6d8b614d84b452488e4425c4059e9586f4610fad2e4b9323cb197bf5660c",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -35,7 +35,7 @@
               "displayName": [
                 "u128"
               ],
-              "type": 14
+              "type": 15
             }
           },
           {
@@ -57,7 +57,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 14
+              "type": 15
             }
           }
         ],
@@ -66,6 +66,56 @@
           " validators must subscribe to this"
         ],
         "name": "Transfer"
+      },
+      {
+        "args": [
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "to",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "endpoint",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "args",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 17
+            }
+          }
+        ],
+        "docs": [],
+        "name": "ScCall"
       }
     ],
     "messages": [
@@ -83,8 +133,7 @@
         ],
         "docs": [
           " Emit a transfer event while locking",
-          " existing coins",
-          " TODO: Support elrond addr"
+          " existing coins"
         ],
         "mutates": true,
         "name": [
@@ -93,6 +142,48 @@
         "payable": true,
         "returnType": null,
         "selector": "0xe6faf2c0"
+      },
+      {
+        "args": [
+          {
+            "name": "target_contract",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "endpoint",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "args",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 17
+            }
+          }
+        ],
+        "docs": [
+          " Emit an SCCall event",
+          " TODO: Charge some token amount for this"
+        ],
+        "mutates": true,
+        "name": [
+          "send_sc_call"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x10062b2a"
       },
       {
         "args": [
@@ -120,7 +211,7 @@
               "displayName": [
                 "Balance"
               ],
-              "type": 14
+              "type": 15
             }
           }
         ],
@@ -133,13 +224,63 @@
           "pop"
         ],
         "payable": false,
-        "returnType": {
-          "displayName": [
-            "bool"
-          ],
-          "type": 16
-        },
+        "returnType": null,
         "selector": "0x5dbd4378"
+      },
+      {
+        "args": [
+          {
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "to",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "name": "endpoint",
+            "type": {
+              "displayName": [],
+              "type": 16
+            }
+          },
+          {
+            "name": "args",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 17
+            }
+          }
+        ],
+        "docs": [],
+        "mutates": true,
+        "name": [
+          "sc_call_verify"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x845f21ef"
       },
       {
         "args": [],
@@ -151,7 +292,7 @@
         "name": [
           "subscribe"
         ],
-        "payable": true,
+        "payable": false,
         "returnType": null,
         "selector": "0xfb968a8f"
       },
@@ -161,7 +302,7 @@
           " Number of validators",
           " only for debugging"
         ],
-        "mutates": true,
+        "mutates": false,
         "name": [
           "validator_cnt"
         ],
@@ -343,7 +484,7 @@
           "layout": {
             "cell": {
               "key": "0x0400000002000000000000000000000000000000000000000000000000000000",
-              "ty": 14
+              "ty": 15
             }
           },
           "name": "last_action"
@@ -576,12 +717,79 @@
     },
     {
       "def": {
-        "tuple": [
-          4,
-          14,
-          15
-        ]
-      }
+        "composite": {
+          "fields": [
+            {
+              "name": "action",
+              "type": 14,
+              "typeName": "Action"
+            },
+            {
+              "name": "validators",
+              "type": 2,
+              "typeName": "u32"
+            }
+          ]
+        }
+      },
+      "path": [
+        "freezer",
+        "freezer",
+        "ActionInfo"
+      ]
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "name": "to",
+                  "type": 4,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "value",
+                  "type": 15,
+                  "typeName": "Balance"
+                }
+              ],
+              "name": "Unfreeze"
+            },
+            {
+              "fields": [
+                {
+                  "name": "to",
+                  "type": 4,
+                  "typeName": "AccountId"
+                },
+                {
+                  "name": "value",
+                  "type": 15,
+                  "typeName": "Balance"
+                },
+                {
+                  "name": "endpoint",
+                  "type": 16,
+                  "typeName": "[u8; 4]"
+                },
+                {
+                  "name": "args",
+                  "type": 17,
+                  "typeName": "Vec<Vec<u8>>"
+                }
+              ],
+              "name": "RpcCall"
+            }
+          ]
+        }
+      },
+      "path": [
+        "freezer",
+        "freezer",
+        "Action"
+      ]
     },
     {
       "def": {
@@ -590,12 +798,24 @@
     },
     {
       "def": {
-        "primitive": "u16"
+        "array": {
+          "len": 4,
+          "type": 6
+        }
       }
     },
     {
       "def": {
-        "primitive": "bool"
+        "sequence": {
+          "type": 18
+        }
+      }
+    },
+    {
+      "def": {
+        "sequence": {
+          "type": 6
+        }
       }
     }
   ]

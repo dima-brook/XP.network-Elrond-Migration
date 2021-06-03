@@ -6,7 +6,15 @@ extern crate alloc;
 #[ink::contract]
 pub mod freezer {
     use bech32;
-    use alloc::string::String;
+    use alloc::{vec::Vec, string::String};
+    use ink_storage::traits::{SpreadLayout, PackedLayout};
+    use scale::{
+        Decode,
+        Encode,
+    };
+    use ink_env::call::*;
+    #[cfg(feature = "std")]
+    use scale_info::TypeInfo;
 
     /// Contract Storage
     /// Stores a list of validators
@@ -15,7 +23,7 @@ pub mod freezer {
     pub struct Freezer {
         validators: ink_storage::collections::HashMap<AccountId, ()>, // O(1) contains
         // action_id: pop_info
-        pop_action: ink_storage::collections::HashMap<String, PopInfo>,
+        pop_action: ink_storage::collections::HashMap<String, ActionInfo>,
         last_action: u128
     }
 
@@ -28,8 +36,54 @@ pub mod freezer {
         value: Balance
     }
 
-    // to, value, num_validators
-    type PopInfo = (AccountId, Balance, u16);
+    #[ink(event)]
+    pub struct ScCall {
+        action_id: u128,
+        to: String,
+        endpoint: String,
+        args: Vec<Vec<u8>>
+    }
+
+    #[derive(Clone, Debug, PartialEq, Encode, Decode, SpreadLayout, PackedLayout)]
+    #[cfg_attr(feature = "std", derive(TypeInfo))]
+    pub enum Action {
+        Unfreeze {
+            to: AccountId,
+            value: Balance
+        },
+        RpcCall {
+            to: AccountId,
+            value: Balance,
+            endpoint: [u8; 4],
+            args: Vec<Vec<u8>>
+        }
+    }
+
+
+    #[derive(Clone, Debug, PartialEq, Encode, Decode, SpreadLayout, PackedLayout)]
+    #[cfg_attr(feature = "std", derive(TypeInfo))]
+    pub struct ActionInfo {
+        action: Action,
+        validators: u32, // TODO: Use HSet
+    }
+
+    impl ActionInfo {
+        fn new(action: Action) -> Self {
+            Self {
+                action,
+                validators: 0,
+            }
+        }
+    }
+
+    // Hack
+    impl Default for ActionInfo {
+        fn default() -> Self {
+            unimplemented!()
+        }
+    }
+
+    impl Eq for ActionInfo {}
 
     impl Freezer {
         #[ink(constructor)]
@@ -43,11 +97,10 @@ pub mod freezer {
 
         /// Emit a transfer event while locking
         /// existing coins
-        /// TODO: Support elrond addr
         #[ink(message)]
         #[ink(payable)]
         pub fn send(&mut self, to: String) {
-            bech32::decode(&to).unwrap();
+            bech32::decode(&to).expect("Invalid address!");
             let val = self.env().transferred_balance();
             if val == 0 {
                 panic!("Value must be > 0!")
@@ -60,30 +113,84 @@ pub mod freezer {
             } )
         }
 
-        /// unfreeze tokens and send them to an address
-        /// only validators can call this
+        /// Emit an SCCall event
+        /// TODO: Charge some token amount for this
         #[ink(message)]
-        pub fn pop(&mut self, action_id: String, to: AccountId, value: Balance) -> bool {
+        pub fn send_sc_call(&mut self, target_contract: String, endpoint: String, args: Vec<Vec<u8>>) {
+            bech32::decode(&target_contract).expect("Invalid address!");
+            self.last_action += 1;
+            self.env().emit_event( ScCall {
+                action_id: self.last_action,
+                to: target_contract,
+                endpoint,
+                args
+            } )
+        }
+
+        fn exec_action(&mut self, action: Action) {
+            match action {
+                Action::Unfreeze { to, value } => self.env().transfer(to, value).unwrap(),
+                Action::RpcCall { to, value, endpoint, mut args } => {
+                    let gas = self.env().gas_left();
+                    if args.len() > 0 {
+                        let exargs = ExecutionInput::new(Selector::new(endpoint))
+                            .push_arg(args.remove(0)); // TODO: Support multiple args
+
+                        build_call::<ink_env::DefaultEnvironment>()
+                            .callee(to)
+                            .gas_limit(gas as u64)
+                            .transferred_value(value)
+                            .exec_input(exargs)
+                            .returns::<()>()
+                            .fire()
+                            .unwrap();
+                    } else {
+                        build_call::<ink_env::DefaultEnvironment>()
+                            .callee(to)
+                            .gas_limit(gas as u64)
+                            .transferred_value(value)
+                            .exec_input(ExecutionInput::new(Selector::new(endpoint)))
+                            .returns::<()>()
+                            .fire()
+                            .unwrap()
+                    }
+                }
+            }
+        }
+
+        fn verify_action(&mut self, action_id: String, action: Action) {
             let caller = self.env().caller();
             if self.validators.get(&caller).is_none() {
                 panic!("not a validator!")
             }
-
-            let ref mut valids = self.pop_action.entry(action_id.clone())
-                .or_insert_with(|| (to, value, 0));
-            valids.2 += 1;
-            let valids = valids.2;
-
             let validator_cnt = self.validator_cnt();
-            if valids as u32 == (2*validator_cnt/3)+1 {
-                self.env().transfer(to, value).unwrap();
+
+            let ref mut info = self.pop_action.entry(action_id.clone())
+                .or_insert_with(|| ActionInfo::new(action));
+            info.validators += 1;
+            let act = info.action.clone();
+            let validated = info.validators;
+            core::mem::drop(info);
+
+            if validated == (2*validator_cnt/3)+1 {
+                self.exec_action(act);
             }
 
-            if valids as u32 == validator_cnt {
+            if validated == validator_cnt {
                 self.pop_action.take(&action_id).unwrap();
             }
-            
-            return true;
+        }
+
+        /// unfreeze tokens and send them to an address
+        /// only validators can call this
+        #[ink(message)]
+        pub fn pop(&mut self, action_id: String, to: AccountId, value: Balance) {
+            self.verify_action(action_id, Action::Unfreeze { to, value })
+        }
+
+        #[ink(message)]
+        pub fn sc_call_verify(&mut self, action_id: String, to: AccountId, value: Balance, endpoint: [u8; 4], args: Vec<Vec<u8>>) {
+            self.verify_action(action_id, Action::RpcCall { to, value, endpoint, args })
         }
 
         /// Subscribe to events & become a validator
@@ -119,7 +226,7 @@ pub mod freezer {
         /// Check default impl 
         #[ink::test]
         fn default_works() {
-            let mut freezer = Freezer::default();
+            let freezer = Freezer::default();
             assert_eq!(freezer.validator_cnt(), 0);
         }
 
@@ -147,7 +254,7 @@ pub mod freezer {
             let acc: AccountId = ink_env::test::default_accounts::<ink_env::DefaultEnvironment>().unwrap().alice;
             let action = "0".to_string();
 
-            assert!(!freezer.pop(action.clone(), acc.clone().into(), 0x0));
+            //assert!(!freezer.pop(action.clone(), acc.clone().into(), 0x0));
 
             freezer.subscribe();
             freezer.pop(action.clone(), acc.clone().into(), 0x0);
