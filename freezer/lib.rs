@@ -55,7 +55,7 @@ pub mod freezer {
             to: AccountId,
             value: Balance,
             endpoint: [u8; 4],
-            args: Vec<Vec<u8>>
+            args: Option<u32>
         }
     }
 
@@ -132,9 +132,9 @@ pub mod freezer {
                 Action::Unfreeze { to, value } => self.env().transfer(to, value).unwrap(),
                 Action::RpcCall { to, value, endpoint, mut args } => {
                     let gas = self.env().gas_left();
-                    if args.len() > 0 {
+                    if let Some(arg) = args {
                         let exargs = ExecutionInput::new(Selector::new(endpoint))
-                            .push_arg(args.remove(0)); // TODO: Support multiple args
+                            .push_arg(arg); // TODO: Support multiple args
 
                         build_call::<ink_env::DefaultEnvironment>()
                             .callee(to)
@@ -189,7 +189,7 @@ pub mod freezer {
         }
 
         #[ink(message)]
-        pub fn sc_call_verify(&mut self, action_id: String, to: AccountId, value: Balance, endpoint: [u8; 4], args: Vec<Vec<u8>>) {
+        pub fn sc_call_verify(&mut self, action_id: String, to: AccountId, value: Balance, endpoint: [u8; 4], args: Option<u32>) {
             self.verify_action(action_id, Action::RpcCall { to, value, endpoint, args })
         }
 
