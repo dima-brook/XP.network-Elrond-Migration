@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from substrateinterface.exceptions import ExtrinsicFailedException
 from config import PolkadotConfig
 import consts
 import subprocess
@@ -7,40 +9,37 @@ from pathlib import Path
 from typing import cast
 
 from substrateinterface import SubstrateInterface, Keypair
-from substrateinterface.contracts import ContractCode, ContractExecutionReceipt, ContractInstance  # noqa: E501
+from substrateinterface.contracts import ContractCode, ContractExecutionReceipt
 
 
 class PolkadotHelper:
-    def __init__(self, provider: str, project: str, freezer: str):
+    def __init__(self, provider: str, project: str):
         self.substrate = SubstrateInterface(
             url=provider,
             ss58_format=42,
-            type_registry_preset='substrate-node-template'
+            type_registry_preset='default'
         )
         self.project = project
         self.sender = Keypair.create_from_uri(consts.ALICE_URI)
-        self.contract_workaround = freezer
 
     @classmethod
     def setup(cls, config: PolkadotConfig) -> PolkadotHelper:
         print("Polkadot setup")
 
-        polka = cls(config.uri, config.project, config.freezer)
-        print("WARN: Contract deployement is broken on py-substrate-interface")
-        print("Make sure you have uploaded the contract!")
+        polka = cls(config.uri, config.project)
         print(f"deployed contract: {polka.deploy_sc()}")
 
         print(f"sending coins to validator: {config.validator}")
-        #call = polka.substrate.compose_call(
-        #    call_module='Balances',
-        #    call_function='transfer',
-        #    call_params={
-        #        'dest': '5E9oDs9PjpsBbxXxRE9uMaZZhnBAV38n2ouLB28oecBDdeQo',
-        #        'value': 10**16
-        #    }
-        #)
-        #ext = polka.substrate.create_signed_extrinsic(call, polka.sender)
-        #polka.substrate.submit_extrinsic(ext, wait_for_inclusion=True)
+        call = polka.substrate.compose_call(
+            call_module='Balances',
+            call_function='transfer',
+            call_params={
+                'dest': '5Gy8nktWvwW2KLu6fk84FHagvxu2B2Go5JRgHJt6aKXVwm4g',
+                'value': 10**16
+            }
+        )
+        ext = polka.substrate.create_signed_extrinsic(call, polka.sender)
+        polka.substrate.submit_extrinsic(ext, wait_for_inclusion=True)
 
         return polka
 
@@ -58,19 +57,19 @@ class PolkadotHelper:
             substrate=self.substrate
         )
 
-        self.contract = ContractInstance(
-            self.contract_workaround,
-            metadata=code.metadata,
-            substrate=self.substrate
-        )
-
-        #self.contract = code.deploy(
-           #keypair=self.sender,
-           #constructor="default",
-           #upload_code=True,
-           #endowment=consts.POLKADOT_FREEZER_ENDOW,
-           #gas_limit=consts.POLKADOT_DEPLOY_GASL
-        #)
+        try:
+            self.contract = code.deploy(
+               keypair=self.sender,
+               constructor="default",
+               upload_code=True,
+               endowment=consts.POLKADOT_FREEZER_ENDOW,
+               gas_limit=consts.POLKADOT_DEPLOY_GASL
+            )
+        except ExtrinsicFailedException as e:
+            if e.args[0]["name"] == "DuplicateContract":
+                print("WARN: Contract is predeployed. not handled yet!")
+            else:
+                raise e
 
         return str(self.contract.contract_address)
 

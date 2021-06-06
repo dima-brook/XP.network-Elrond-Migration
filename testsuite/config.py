@@ -24,7 +24,6 @@ class PolkadotConfig:
     def __init__(self, parser: SectionProxy):
         self.uri: Final = str(parser["NODE_URI"])
         self.project: Final = abspath(str(parser["FREEZER_PROJECT"]))
-        self.freezer: Final = str(parser["FREEZER_CONTRACT"])
         self.validator: Final = str(parser["VALIDATOR_WORKAROUND"])
 
 
