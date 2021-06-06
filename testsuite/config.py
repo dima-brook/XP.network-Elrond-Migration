@@ -1,5 +1,7 @@
 import consts
 
+from dataclasses import dataclass, field
+from os.path import abspath
 from configparser import ConfigParser, SectionProxy
 from typing import Final
 
@@ -8,18 +10,38 @@ class Config:
     def __init__(self) -> None:
         parser = ConfigParser()
         parser.read(consts.CONFIG_FILE)
-        self.polkadot: Final = Polkadot(parser["POLKADOT"])
-        self.elrond: Final = Elrond(parser["ELROND"])
+        self.validator: Final = ValidatorConfig(parser["VALIDATOR"])
+        self.polkadot: Final = PolkadotConfig(parser["POLKADOT"])
+        self.elrond: Final = ElrondConfig(parser["ELROND"])
 
 
-class Polkadot:
+class ValidatorConfig:
+    def __init__(self, parser: SectionProxy):
+        self.project: Final = abspath(str(parser["DIR"]))
+
+
+class PolkadotConfig:
     def __init__(self, parser: SectionProxy):
         self.uri: Final = str(parser["NODE_URI"])
+        self.project: Final = abspath(str(parser["FREEZER_PROJECT"]))
+        self.freezer: Final = str(parser["FREEZER_CONTRACT"])
+        self.validator: Final = str(parser["VALIDATOR_WORKAROUND"])
 
 
-class Elrond:
+class ElrondConfig:
     def __init__(self, parser: SectionProxy):
         self.uri: Final = str(parser["NODE_URI"])
         self.event_socket: Final = str(parser["EVENT_SOCK"])
-        self.sender: Final = str(parser["SENDER_PEM"])
-        self.project: Final = str(parser["MINT_PROJECT"])
+        self.sender: Final = abspath(str(parser["SENDER_PEM"]))
+        self.project: Final = abspath(str(parser["MINT_PROJECT"]))
+
+
+@dataclass
+class ValidatorRuntimeConfig:
+    xnode: Final[str] = field(metadata={"required": True})
+    elrond_node: Final[str] = field(metadata={"required": True})
+    private_key: Final[str] = field(metadata={"required": True})
+    elrond_sender: Final[str] = field(metadata={"required": True})
+    elrond_minter: Final[str] = field(metadata={"required": True})
+    xp_freezer: Final[str] = field(metadata={"required": True})
+    elrond_ev_socket: Final[str] = field(metadata={"required": True})

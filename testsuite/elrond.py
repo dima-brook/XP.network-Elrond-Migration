@@ -1,3 +1,5 @@
+from __future__ import annotations
+from config import ElrondConfig
 from erdpy.interfaces import IElrondProxy
 import consts
 import time
@@ -13,25 +15,6 @@ from erdpy.projects import ProjectRust
 from erdpy.transactions import Transaction
 
 
-def wait_transaction_done(tx_hash: str) -> Any:
-    time.sleep(3)
-    while data := requests.get(consts.ELROND_TX_URI.format(tx_hash)):
-        res = data.json()
-        if res["code"] != "successful":
-            raise Exception(f"failed to execute tx: {tx_hash}, \
-                            error: {res['error']}")
-
-        res = res["data"]["transaction"]
-        if res["status"] == "pending":
-            time.sleep(5)
-            continue
-        elif res["status"] != "success":
-            raise Exception(f"failed to execute tx: {tx_hash}, \
-                            status: {res['transaction']['status']}")
-
-        return res
-
-
 class ElrondHelper:
     def __init__(self, proxy: str, sender_pem: str, project_folder: str):
         self.proxy = ElrondProxy(proxy)
@@ -39,6 +22,41 @@ class ElrondHelper:
         self.sender = Account(pem_file=sender_pem)
         self.project = ProjectRust(project_folder)
         self.sender.sync_nonce(self.proxy)
+
+    @classmethod
+    def setup(cls, config: ElrondConfig) -> ElrondHelper:
+        print("Elrond Setup")
+        elrd = cls(config.uri, config.sender, config.project)
+
+        print("Issuing esdt...")
+        print(f"Issued esdt: {elrd.prepare_esdt()}")
+
+        print("deplyoing minter...")
+        print(f"deployed contract: {elrd.deploy_sc().bech32()}")
+
+        print("setting up contract perms...")
+        print(f"perm setup done! tx: {elrd.setup_sc_perms().hash}")
+
+        return elrd
+
+    def wait_transaction_done(self, tx_hash: str) -> Any:
+        time.sleep(3)
+        uri = consts.ELROND_TX_URI.format(proxy=self.proxy_uri, tx=tx_hash)
+        while data := requests.get(uri):
+            res = data.json()
+            if res["code"] != "successful":
+                raise Exception(f"failed to execute tx: {tx_hash}, \
+                                error: {res['error']}")
+
+            res = res["data"]["transaction"]
+            if res["status"] == "pending":
+                time.sleep(5)
+                continue
+            elif res["status"] != "success":
+                raise Exception(f"failed to execute tx: {tx_hash}, \
+                                status: {res['transaction']['status']}")
+
+            return res
 
     def prepare_esdt(self) -> str:
         tx = Transaction()
@@ -56,11 +74,21 @@ class ElrondHelper:
 
         tx.sign(self.sender)
         tx.send(cast(IElrondProxy, self.proxy))
-        self.esdt_hex = str(
-            wait_transaction_done(tx.hash)["smartContractResults"][-1]["data"]
-        ).split("@")[1]
+        for res in self.wait_transaction_done(tx.hash)["smartContractResults"]:
+            if res["sender"] != consts.ELROND_ESDT_SC_ADDR:  # noqa: E501
+                continue
 
-        return bytes.fromhex(self.esdt_hex).decode("utf-8")
+            self.esdt_hex = str(
+                res["data"]
+            ).split("@")[1]
+            if len(self.esdt_hex) < len("XPDT")*2:
+                continue
+
+            break
+
+        self.esdt_str = bytes.fromhex(self.esdt_hex).decode("utf-8")
+
+        return self.esdt_str
 
     def deploy_sc(self, clean: bool = False) -> Address:
         if not self.esdt_hex:
@@ -85,7 +113,7 @@ class ElrondHelper:
             version=config.get_tx_version()
         )
         tx.send(cast(IElrondProxy, self.proxy))
-        wait_transaction_done(tx.hash)
+        self.wait_transaction_done(tx.hash)
 
         self.contract = contract
 
@@ -113,6 +141,16 @@ class ElrondHelper:
 
         tx.sign(self.sender)
         tx.send(cast(IElrondProxy, self.proxy))
-        wait_transaction_done(tx.hash)
+        self.wait_transaction_done(tx.hash)
 
         return tx
+
+    def check_esdt_bal(self, bch32_addr: str) -> int:
+        uri = consts.ELROND_ESDT_BAL_URI.format(
+            proxy=self.proxy_uri,
+            addr=bch32_addr,
+            token=self.esdt_str
+        )
+
+        return int(requests.get(uri)
+                   .json()["data"]["tokenData"]["balance"])
