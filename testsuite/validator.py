@@ -1,3 +1,4 @@
+import atexit
 import dataclasses
 import json
 import consts
@@ -25,5 +26,8 @@ class ValidatorHelper:
             cwd=self.project,
             bufsize=1,
         )
+
+        atexit.register(lambda: p.kill())
+
         time.sleep(30)
         return p

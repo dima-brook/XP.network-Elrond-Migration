@@ -32,7 +32,8 @@ def liquidity_e2p(elrd: ElrondHelper) -> None:
     event_id = input("Enter event id from transaction: ")
 
     requests.post(f"{elrd.event_uri.replace('ws://', 'http://')}/event/transfer", headers={"id": event_id})  # noqa: E501
-    print("sent request!")
+    print("sent request! Receiving token may take a while")
+    input("Please press enter once you have received the tokens")
 
 
 def liquidity_test(polka: PolkadotHelper, elrd: ElrondHelper) -> None:
