@@ -31,6 +31,7 @@ class ElrondConfig:
     def __init__(self, parser: SectionProxy):
         self.uri: Final = str(parser["NODE_URI"])
         self.event_socket: Final = str(parser["EVENT_SOCK"])
+        self.event_rest: Final = str(parser["EVENT_REST"])
         self.sender: Final = abspath(str(parser["SENDER_PEM"]))
         self.project: Final = abspath(str(parser["MINT_PROJECT"]))
 

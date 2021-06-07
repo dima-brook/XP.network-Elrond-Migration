@@ -35,7 +35,7 @@ class ElrondHelper:
         print("Elrond Setup")
         elrd = cls(
             config.uri,
-            config.event_socket,
+            config.event_rest,
             config.sender,
             config.project
         )
