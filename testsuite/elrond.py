@@ -16,9 +16,16 @@ from erdpy.transactions import Transaction
 
 
 class ElrondHelper:
-    def __init__(self, proxy: str, sender_pem: str, project_folder: str):
+    def __init__(
+        self,
+        proxy: str,
+        events: str,
+        sender_pem: str,
+        project_folder: str
+    ):
         self.proxy = ElrondProxy(proxy)
         self.proxy_uri = proxy
+        self.event_uri = events
         self.sender = Account(pem_file=sender_pem)
         self.project = ProjectRust(project_folder)
         self.sender.sync_nonce(self.proxy)
@@ -26,7 +33,12 @@ class ElrondHelper:
     @classmethod
     def setup(cls, config: ElrondConfig) -> ElrondHelper:
         print("Elrond Setup")
-        elrd = cls(config.uri, config.sender, config.project)
+        elrd = cls(
+            config.uri,
+            config.event_socket,
+            config.sender,
+            config.project
+        )
 
         print("Issuing esdt...")
         print(f"Issued esdt: {elrd.prepare_esdt()}")
@@ -154,3 +166,27 @@ class ElrondHelper:
 
         return int(requests.get(uri)
                    .json()["data"]["tokenData"]["balance"])
+
+    def unfreeze(self, signer: Account, to: str, value: int) -> Transaction:
+        signer.sync_nonce(self.proxy)
+
+        tx = self.contract.execute(
+            caller=signer,
+            function="ESDTTransfer",
+            value=0,
+            arguments=[
+                f"0x{self.esdt_hex}",
+                value,
+                f'0x{bytes("withdraw", "ascii").hex()}',
+                f'0x{bytes(to, "ascii").hex()}'
+            ],
+            gas_price=consts.ELROND_GAS_PRICE,
+            gas_limit=consts.ELROND_ESDT_GASL,
+            chain=str(self.proxy.get_chain_id()),
+            version=config.get_tx_version()
+        )
+
+        tx.send(cast(IElrondProxy, self.proxy))
+        self.wait_transaction_done(tx.hash)
+
+        return tx

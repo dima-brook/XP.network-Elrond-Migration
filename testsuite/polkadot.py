@@ -34,7 +34,7 @@ class PolkadotHelper:
             call_module='Balances',
             call_function='transfer',
             call_params={
-                'dest': '5Gy8nktWvwW2KLu6fk84FHagvxu2B2Go5JRgHJt6aKXVwm4g',
+                'dest': config.validator,
                 'value': 10**16
             }
         )
