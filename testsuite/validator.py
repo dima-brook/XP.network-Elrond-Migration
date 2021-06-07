@@ -27,7 +27,7 @@ class ValidatorHelper:
             bufsize=1,
         )
 
-        atexit.register(lambda: p.kill())
+        atexit.register(lambda: p.terminate())
 
         time.sleep(30)
         return p
