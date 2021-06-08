@@ -9,3 +9,4 @@ coverage
 yarn.lock
 dist
 src/config.json
+tsconfig.tsbuildinfo
