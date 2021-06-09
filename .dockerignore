@@ -1,0 +1,8 @@
+.git
+**/target
+**/node_modules
+elrond-event-middleware/build
+validator/dist
+testsuite/__pycache__
+elrond-mint-contract/wasm
+elrond-mint-contract/output
