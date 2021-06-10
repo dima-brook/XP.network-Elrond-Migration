@@ -31,8 +31,20 @@ def liquidity_e2p(elrd: ElrondHelper) -> None:
     print(f"TX Hash: {tx.hash}")
     event_id = input("Enter event id from transaction: ")
 
+    sender_addr = sender.address.bech32()
+
+    cur_b = elrd.check_esdt_bal(sender_addr)
+    target = cur_b - value
+
     requests.post(f"{elrd.event_uri}/event/transfer", headers={"id": event_id})  # noqa: E501
     print("sent request! Receiving token may take a while")
+
+    print(f"{sender_addr} elrd token balance: {cur_b}")
+    while elrd.check_esdt_bal(sender_addr) != target:
+        time.sleep(2.5)
+
+    print(f"{sender.address} elrd token new balance: {target}")
+
     input("Please press enter once you have received the tokens")
 
 

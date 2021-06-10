@@ -17,11 +17,11 @@ This process may take from 20 to 40 minutes depending on your machine.
 
 ## Testing
 
-This requires `--network host` flag if you want to access the frontend!
-
-`docker run --network host --rm -i -t xpnet-elrond/test bash`
+`docker run -p 8000:8001 -p 9944:9944 -p 7950:7950 -i -t --rm xpnet-elrond/test bash`
 
 `./docker_run.sh`
+
+substrate frontend should be accesible on `localhost:8000`!
 
 ## Troubleshooting
 

@@ -11,6 +11,8 @@ sleep 10
 echo "Starting elrond test node"
 
 cd ~/app/elrond-mint-contract
+erdpy testnet clean
+erdpy testnet config
 (&>/dev/null erdpy testnet start &)
 cd $cur
 

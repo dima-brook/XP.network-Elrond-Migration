@@ -60,15 +60,17 @@ WORKDIR /home/runner/app
 COPY --chown=runner . /home/runner/app
 
 WORKDIR /home/runner/app/elrond-mint-contract
-RUN erdpy config set chainID "local-testnet"
-RUN erdpy config set proxy "http://0.0.0.0:7950"
-RUN erdpy testnet prerequisites
 
 # I don't know why the shipped erdpy is broken.
 # Use local snapshot
 RUN rm -rf /home/runner/elrondsdk/erdpy-venv/lib/python3.9/site-packages/erdpy
 COPY ./erdpy /home/runner/elrondsdk/erdpy-venv/lib/python3.9/site-packages/erdpy/
 
+
+RUN erdpy config set chainID "local-testnet"
+RUN erdpy config set proxy "http://0.0.0.0:7950"
+
+RUN erdpy testnet prerequisites
 RUN erdpy testnet clean
 RUN erdpy testnet config
 RUN erdpy contract build .
