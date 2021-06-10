@@ -4,6 +4,36 @@ See Freezer for a WIP coin freezer ink contract \
 See Validator for a WIP txn mediator \
 See elrond-mint-contract for a WIP elrond multisig based wrapper token minter
 
+This repository has submodules.
+remember to clone with the `--recursive` flag!
+
+# Docker Test Environment
+
+## Building
+
+This process may take from 20 to 40 minutes depending on your machine.
+
+`docker build -t xpnet-elrond/test .`
+
+## Testing
+
+This requires `--network host` flag if you want to access the frontend!
+
+`docker run --network host --rm -i -t xpnet-elrond/test bash`
+
+`./docker_run.sh`
+
+## Troubleshooting
+
+if `docker_run.sh` is stuck on "Starting elrond test node", consider cleaning the elrond testnet.
+
+```shell
+cd ../elrond-mint-contract
+erdpy testnet clean && erdpy testnet config
+cd ../testsuite
+./docker_run.sh
+```
+
 # Prerequisites
 
 - [ink-cli](https://substrate.dev/substrate-contracts-workshop/#/0/setup)
