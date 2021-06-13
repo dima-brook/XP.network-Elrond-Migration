@@ -9,6 +9,11 @@ remember to clone with the `--recursive` flag!
 
 # Docker Test Environment
 
+WARN: The current docker image uses a local copy of erdpy due to testnet issues.
+We are investigating the issue with the remote distribution.
+
+TODO: Try on remote testnet
+
 ## Building
 
 This process may take from 20 to 40 minutes depending on your machine.
@@ -61,6 +66,12 @@ cd ../testsuite
 - Send some coins to freezer contract with a target elrond address
 - The target elrond address should receive our wrapper tokens within seconds
 
-# Limitations
 
-Only one way(XP -> ELROND) transactions are implemented for now
+## Manual Testing
+
+`Python3.9` required!!
+
+- go to `testsuite`
+- No need to setup
+- Make sure substrate node and elrond testnet are running
+- `python3.9 main.py`
