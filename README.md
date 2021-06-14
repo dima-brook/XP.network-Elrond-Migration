@@ -7,12 +7,19 @@ See elrond-mint-contract for a WIP elrond multisig based wrapper token minter
 This repository has submodules.
 remember to clone with the `--recursive` flag!
 
+# Testsuite Configuration
+
+The `testsuite/config.ini` file is already setup for the docker test environment.
+
+You can test it on a live testnet as well.
+
+Change the `NODE_URI` in the `[ELROND]` section to `https://testnet-beta-api.elrond.com`  
+Note that the default `SENDER_PEM` is a public wallet.
+
 # Docker Test Environment
 
 WARN: The current docker image uses a local copy of erdpy due to testnet issues.
 We are investigating the issue with the remote distribution.
-
-TODO: Try on remote testnet
 
 ## Building
 
