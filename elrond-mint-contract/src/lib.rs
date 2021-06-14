@@ -51,6 +51,19 @@ pub trait Multisig {
 	#[storage_mapper("event_ident")]
 	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
 
+	fn event_ident_inc(&self) -> Self::BigUint {
+		self.event_ident().update(|event| {
+			event.add_assign(Self::BigUint::from(1u64));
+			event.clone()
+		})
+	}
+
+	fn insert_event(&self, event: EventInfo<Self::BigUint>) -> Self::BigUint {
+		let ident = self.event_ident_inc();
+		self.event_mapper().insert(ident.clone(), event);
+		ident
+	}
+
 	fn set_executed(&self, id: Self::BigUint) {
 		let mut action_mapper = self.action_mapper();
 		let mut info = action_mapper.get(&id).unwrap();
@@ -108,6 +121,16 @@ pub trait Multisig {
 		Ok(())
 	}
 
+	#[payable("EGLD")]
+	#[endpoint(freezeSend)]
+	fn freeze_send(&self, #[payment] value: Self::BigUint, to: String) -> SCResult<Self::BigUint> {
+		require!(value > 0, "Value must be > 0");
+
+		let ident = self.insert_event(EventInfo::new(Event::Transfer { to, value }));
+
+		Ok(ident)
+	}
+
 	#[payable("*")]
 	#[endpoint(withdraw)]
 	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<Self::BigUint> {
@@ -116,11 +139,7 @@ pub trait Multisig {
 
 		self.send().esdt_local_burn(&token, &value);
 
-		let ident = self.event_ident().update(|event| { 
-			event.add_assign(Self::BigUint::from(1u64));
-			event.clone()
-		});
-		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Unfreeze { to, value }));
+		let ident = self.insert_event(EventInfo::new(Event::Unfreeze { to, value }));
 	
 		Ok(ident)
 	}
@@ -246,6 +265,16 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::ChangeMinValid(new_quorum))
 	}
 
+	#[endpoint(validateUnfreeze)]
+	fn validate_unfreeze(
+		&self,
+		uuid: Self::BigUint,
+		to: Address,
+		amount: Self::BigUint
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
+		self.validate_action(uuid, Action::Unfreeze { to, amount })
+	}
+
 	/// Send wrapper tokens
 	#[endpoint(validateSendXp)]
 	fn validate_send_xp(
@@ -365,6 +394,17 @@ pub trait Multisig {
 				Ok(PerformActionResult::AsyncCall(
 					contract_call_raw.async_call(),
 				))
+			},
+			Action::Unfreeze {
+				to,
+				amount
+			} => {
+				Ok(PerformActionResult::Unfreeze(SendEgld {
+					api: self.send(),
+					to,
+					amount,
+					data: BoxedBytes::empty()
+				}))
 			}
 		}
 	}

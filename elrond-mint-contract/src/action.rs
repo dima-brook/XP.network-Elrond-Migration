@@ -1,9 +1,5 @@
 
-use elrond_wasm::{
-	api::{BigUintApi, EndpointFinishApi, SendApi},
-	io::EndpointResult,
-	types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendToken, Vec},
-};
+use elrond_wasm::{api::{BigUintApi, EndpointFinishApi, SendApi}, io::EndpointResult, types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendEgld, SendToken, Vec}};
 
 elrond_wasm::derive_imports!();
 
@@ -25,6 +21,10 @@ pub enum Action<BigUint: BigUintApi> {
 		endpoint: BoxedBytes,
 		args: Vec<BoxedBytes>,
 	},
+	Unfreeze {
+		to: Address,
+		amount: BigUint
+	}
 }
 
 // Information associated with an action
@@ -56,7 +56,8 @@ where
 	Done,
 	Pending,
 	SendXP(SendToken<SA>),
-	AsyncCall(AsyncCall<SA>)
+	AsyncCall(AsyncCall<SA>),
+	Unfreeze(SendEgld<SA>)
 }
 
 impl<SA> EndpointResult for PerformActionResult<SA>
@@ -72,7 +73,8 @@ where
 		match self {
 			PerformActionResult::Done | PerformActionResult::Pending=> (),
 			PerformActionResult::SendXP(send_token) => send_token.finish(api),
-			PerformActionResult::AsyncCall(async_call) => async_call.finish(api)
+			PerformActionResult::AsyncCall(async_call) => async_call.finish(api),
+			PerformActionResult::Unfreeze(send_egld) => send_egld.finish(api)
 		}
 	}
 }

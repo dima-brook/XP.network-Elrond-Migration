@@ -17,6 +17,10 @@ pub enum Event<BigUint: BigUintApi> {
         value: BigUint,
         endpoint: String,
         args: Vec<BoxedBytes>,
+    },
+    Transfer {
+        to: String,
+        value: BigUint
     }
 }
 
