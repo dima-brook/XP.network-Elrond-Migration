@@ -93,7 +93,7 @@ class ElrondHelper:
             self.esdt_hex = str(
                 res["data"]
             ).split("@")[1]
-            if len(self.esdt_hex) < len("XPDT")*2:
+            if len(self.esdt_hex) < len("XPNET")*2:
                 continue
 
             break

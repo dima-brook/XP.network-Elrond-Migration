@@ -44,11 +44,11 @@ class PolkadotHelper:
         return polka
 
     def deploy_sc(self) -> str:
-        subprocess.run(
-            ["cargo", "+nightly", "contract", "build"],
-            check=True,
-            cwd=self.project
-        )
+        #subprocess.run(
+         #   ["cargo", "+nightly", "contract", "build"],
+          #  check=True,
+           # cwd=self.project
+        #)
 
         target = Path(consts.POLKADOT_OUT_DIR.format(project=self.project))
         code = ContractCode.create_from_contract_files(
