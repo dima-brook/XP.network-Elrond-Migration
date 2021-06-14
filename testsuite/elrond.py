@@ -5,7 +5,7 @@ import consts
 import time
 import requests
 
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from erdpy import config
 from erdpy.proxy import ElrondProxy
@@ -157,15 +157,31 @@ class ElrondHelper:
 
         return tx
 
-    def check_esdt_bal(self, bch32_addr: str) -> int:
-        uri = consts.ELROND_ESDT_BAL_URI.format(
-            proxy=self.proxy_uri,
-            addr=bch32_addr,
-            token=self.esdt_str
-        )
+    def check_esdt_bal(self, bch32_addr: str) -> Optional[int]:
+        try:
+            uri = consts.ELROND_ESDT_BAL_URI.format(
+                proxy=self.proxy_uri,
+                addr=bch32_addr,
+                token=self.esdt_str
+            )
 
-        return int(requests.get(uri)
-                   .json()["data"]["tokenData"]["balance"])
+            return int(requests.get(uri)
+                       .json()["data"]["tokenData"]["balance"])
+        except Exception as e:
+            print("WARN: Can't check esdt balance. returning None. err:", e)
+            return None
+
+    def wait_esdt_bal_added(self, bch32_addr: str, added: int,
+                            prev: Optional[int] = None) -> Optional[int]:
+        cur_b = prev if prev else self.check_esdt_bal(bch32_addr)
+        if cur_b is None:
+            return None
+
+        target = cur_b + added
+        while self.check_esdt_bal(bch32_addr) != target:
+            time.sleep(2.5)
+
+        return target
 
     def unfreeze(self, signer: Account, to: str, value: int) -> Transaction:
         signer.sync_nonce(self.proxy)

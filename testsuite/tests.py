@@ -1,4 +1,3 @@
-import time
 import erdpy.accounts
 import requests
 
@@ -11,13 +10,13 @@ def liquidity_p2e(polka: PolkadotHelper, elrd: ElrondHelper) -> None:
     value = int(input("Enter XP Token value(pico): "))
 
     cur_b = elrd.check_esdt_bal(destination)
-    target = cur_b + value
     print(f"{destination} current balance: {cur_b}")
     assert(polka.send_tokens(destination, value).is_success)
-    while elrd.check_esdt_bal(destination) != target:
-        time.sleep(2.5)
 
-    print(f"{destination} new balance: {elrd.check_esdt_bal(destination)}")
+    if target := elrd.wait_esdt_bal_added(destination, value):
+        print(f"{destination} new balance: {target}")
+    else:
+        input("Press Enter once you receive the tokens!")
 
 
 def liquidity_e2p(elrd: ElrondHelper) -> None:
@@ -34,16 +33,12 @@ def liquidity_e2p(elrd: ElrondHelper) -> None:
     sender_addr = sender.address.bech32()
 
     cur_b = elrd.check_esdt_bal(sender_addr)
-    target = cur_b - value
 
     requests.post(f"{elrd.event_uri}/event/transfer", headers={"id": event_id})  # noqa: E501
     print("sent request! Receiving token may take a while")
 
-    print(f"{sender_addr} elrd token balance: {cur_b}")
-    while elrd.check_esdt_bal(sender_addr) != target:
-        time.sleep(2.5)
-
-    print(f"{sender.address} elrd token new balance: {target}")
+    if target := elrd.wait_esdt_bal_added(sender_addr, -value, cur_b):
+        print(f"{sender_addr} elrd token balance: {target}")
 
     input("Please press enter once you have received the tokens")
 
