@@ -74,11 +74,21 @@ def egld_p2e(polka: PolkadotHelper) -> None:
     input("Press enter once you have received the EGLD!")
 
 
+def egld_test(elrd: ElrondHelper, polka: PolkadotHelper) -> None:
+    print("Send test (Elrond(EGLD) -> Polkadot)")
+    egld_e2p(elrd)
+
+    input("Press enter to continue")
+
+    print("Unfreeze Test (Polkadot(EGLD Wrapper) -> Elrond)")
+    egld_p2e(polka)
+
+
 def liquidity_test(polka: PolkadotHelper, elrd: ElrondHelper) -> None:
-    print("Send Test (polkadot -> Elrond)")
+    print("Send Test (polkadot(Unit) -> Elrond)")
     liquidity_p2e(polka, elrd)
 
     input("Press enter to continue")
 
-    print("Unfreeze Test (Elrond -> Polkadot)")
+    print("Unfreeze Test (Elrond(XPNET Wrapper) -> Polkadot)")
     liquidity_e2p(elrd)

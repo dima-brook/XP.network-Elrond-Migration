@@ -4,7 +4,7 @@ from validator import ValidatorHelper
 from config import Config, ValidatorRuntimeConfig
 from typing import Tuple
 
-from tests import liquidity_test
+from tests import liquidity_test, egld_test
 
 
 def setup(config: Config) -> Tuple[PolkadotHelper, ElrondHelper]:
@@ -35,7 +35,22 @@ def main() -> None:
     config = Config()
     polka, elrd = setup(config)
 
-    liquidity_test(polka, elrd)
+    cont = True
+
+    while cont:
+        print("""Available Tests:
+1. Liquidity (Polkadot Units -> Elrond)
+2. EGLD (Elrond EGOLD -> Polkadot)""")
+
+        choice = input("Select test: ")
+        if choice == "1":
+            liquidity_test(polka, elrd)
+        elif choice == "2":
+            egld_test(elrd, polka)
+        else:
+            print("Invalid choice!")
+
+        cont = input("Continue?(y/n) ").lower() == "y"
 
 
 if __name__ == "__main__":
