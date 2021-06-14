@@ -44,11 +44,11 @@ class PolkadotHelper:
         return polka
 
     def deploy_sc(self) -> str:
-        #subprocess.run(
-         #   ["cargo", "+nightly", "contract", "build"],
-          #  check=True,
-           # cwd=self.project
-        #)
+        subprocess.run(
+            ["cargo", "+nightly", "contract", "build"],
+           check=True,
+           cwd=self.project
+        )
 
         target = Path(consts.POLKADOT_OUT_DIR.format(project=self.project))
         code = ContractCode.create_from_contract_files(
@@ -86,5 +86,26 @@ class PolkadotHelper:
             consts.FREEZER_SEND_CALL,
             args={'to': to},
             value=value,
+            gas_limit=cast(int, dry.gas_consumed)
+        )
+
+    def unfreeze_wrap(
+        self,
+        sender: Keypair,
+        to: str,
+        value: int
+    ) -> ContractExecutionReceipt:
+        dry = self.contract.read(
+            sender,
+            consts.FREEZER_UNFREEZE_CALL,
+            args={'to': to, 'value': value},
+            value=0
+        )
+
+        return self.contract.exec(
+            sender,
+            consts.FREEZER_SEND_CALL,
+            args={'to': to, 'value': value},
+            value=0,
             gas_limit=cast(int, dry.gas_consumed)
         )

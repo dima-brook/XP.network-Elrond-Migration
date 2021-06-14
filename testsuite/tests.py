@@ -1,5 +1,7 @@
 import erdpy.accounts
 import requests
+import stdiomask
+from substrateinterface.base import Keypair
 
 from polkadot import PolkadotHelper
 from elrond import ElrondHelper
@@ -41,6 +43,35 @@ def liquidity_e2p(elrd: ElrondHelper) -> None:
         print(f"{sender_addr} elrd token balance: {target}")
 
     input("Please press enter once you have received the tokens")
+
+
+def egld_e2p(elrd: ElrondHelper) -> None:
+    destination = input("Enter destination polkadot address: ")
+    value = int(input("Enter EGLD amount: "))
+    pem = input("Enter sender's(elrond) pem file: ")
+
+    sender = erdpy.accounts.Account(pem_file=pem)
+
+    tx = elrd.send_tokens(sender, destination, value)
+    print(f"TX Hash: {tx.hash}")
+    event_id = input("Enter event id from transaction: ")
+
+    requests.post(f"{elrd.event_uri}/event/transfer", headers={"id": event_id})  # noqa: E501
+    print("sent request! Receiving wrapper tokens may take a while!")
+
+    input("Please enter once you have received confirmation from validator")
+
+
+def egld_p2e(polka: PolkadotHelper) -> None:
+    destination = input("Enter destination elrd address(bech32): ")
+    value = int(input("Enter Wrapper EGLD amount: "))
+    pk = stdiomask.getpass("Enter sender's private key(protected): ")
+
+    sender = Keypair.create_from_private_key(pk)
+
+    assert(polka.unfreeze_wrap(sender, destination, value).is_success)
+
+    input("Press enter once you have received the EGLD!")
 
 
 def liquidity_test(polka: PolkadotHelper, elrd: ElrondHelper) -> None:

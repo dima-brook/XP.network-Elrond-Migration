@@ -206,3 +206,24 @@ class ElrondHelper:
         self.wait_transaction_done(tx.hash)
 
         return tx
+
+    def send_tokens(self, signer: Account, to: str, value: int) -> Transaction:
+        signer.sync_nonce(self.proxy)
+
+        tx = self.contract.execute(
+            caller=signer,
+            function="freezeSend",
+            value=value,
+            arguments=[
+                f"0x{bytes(to, 'ascii').hex()}"
+            ],
+            gas_price=consts.ELROND_GAS_PRICE,
+            gas_limit=consts.ELROND_ESDT_GASL,
+            chain=str(self.proxy.get_chain_id()),
+            version=config.get_tx_version()
+        )
+
+        tx.send(cast(IElrondProxy, self.proxy))
+        self.wait_transaction_done(tx.hash)
+
+        return tx

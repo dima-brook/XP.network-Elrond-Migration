@@ -9,6 +9,7 @@ POLKADOT_OUT_DIR = "{project}/target/ink/"
 POLKADOT_FREEZER_ENDOW = 10**15
 POLKADOT_DEPLOY_GASL = 1000000000000
 FREEZER_SEND_CALL = "send"
+FREEZER_UNFREEZE_CALL = "withdrawWrapper"
 WORKAROUND_METADATA = "workaround.json"
 
 # Elrond stuff
