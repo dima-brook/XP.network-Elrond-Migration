@@ -10,10 +10,10 @@ echo "Starting alice's substrate node(use ws port 9944 to access)"
 	--ws-port 9944 \
 	--rpc-port 9933 \
 	--node-key 0000000000000000000000000000000000000000000000000000000000000001 \
-	--validator
+	--validator \
 	--ws-external &)
 
-	echo "Starting bob's substrate node(use ws port 9945 to access)"
+echo "Starting bob's substrate node(use ws port 9945 to access)"
 
 (&>/dev/null ~/node-template --chain local \
 	--base-path /tmp/bob \
