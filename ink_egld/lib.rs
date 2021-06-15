@@ -95,33 +95,39 @@ pub mod ink_egld {
         }
 
         #[ink(message)]
-        pub fn mint(&mut self, value: Balance, to: AccountId) -> Result<()> {
+        pub fn new_owner(&mut self, owner: AccountId) {
             if self.env().caller() != self.owner {
-                return Err(Error::InsufficentPermissions)
+                panic!("only owner can call this")
+            }
+
+            self.owner = owner;
+        }
+
+        #[ink(message, selector = "0x3191C019")]
+        pub fn mint(&mut self, value: Balance, to: AccountId) {
+            if self.env().caller() != self.owner {
+                panic!("only owner can call this")
             }
 
             let balance = self.balances.get(&to).cloned().unwrap_or(0) + value;
             self.balances.insert(to, balance);
 
             self.total_supply += value;
-            Ok(())
         }
 
-        #[ink(message)]
-        pub fn burn(&mut self, value: Balance, account: AccountId) -> Result<()> {
+        #[ink(message, selector = "0xB0F9C019")]
+        pub fn burn(&mut self, value: Balance, account: AccountId) {
             if self.env().caller() != self.owner {
-                return Err(Error::InsufficentPermissions)
+                panic!("only owner can call this");
             }
 
-            let balance = self.balances.get(&account).ok_or(Error::InsufficientBalance)?.clone();
+            let balance = self.balances.get(&account).expect("InsufficientBalance").clone();
             if balance < value {
-                return Err(Error::InsufficientBalance)
+                panic!("InsufficientBalance")
             }
 
             self.balances.insert(account, balance - value);
             self.total_supply -= value;
-
-            Ok(())
         }
 
         /// Returns the total token supply.
