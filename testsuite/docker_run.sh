@@ -4,24 +4,11 @@ cur=$PWD
 
 echo "Starting alice's substrate node(use ws port 9944 to access)"
 
-(&>/dev/null ~/node-template --chain local \
-	--base-path /tmp/alice \
-	--port 30333 \
-	--ws-port 9944 \
-	--rpc-port 9933 \
-	--node-key 0000000000000000000000000000000000000000000000000000000000000001 \
-	--validator \
-	--ws-external &)
+(&>/dev/null ~/node-template --chain local --base-path /tmp/alice --port 30333 --ws-port 9944 --rpc-port 9933 --node-key 0000000000000000000000000000000000000000000000000000000000000001 --validator --ws-external &)
 
 echo "Starting bob's substrate node(use ws port 9945 to access)"
 
-(&>/dev/null ~/node-template --chain local \
-	--base-path /tmp/bob \
-	--port 30334 \
-	--ws-port 9945 \
-	--rpc-port 9934 \
-	--validator \
-	--ws-external &)
+(&>/dev/null ~/node-template --chain local --base-path /tmp/bob --port 30334 --ws-port 9945 --rpc-port 9934 --validator --ws-external &)
 
 sleep 10
 
