@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0xe9b17312b0b58bf314685f89fc1baed826a359c81d013465089f5e4a9a6335ed",
+    "hash": "0xf59d5ba2cae693da4831b76c6535ae5029f21e24f532dcf4576be02585b78cfc",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -17,21 +17,12 @@
       {
         "args": [
           {
-            "name": "version",
+            "name": "erc20_addr",
             "type": {
               "displayName": [
-                "u32"
+                "AccountId"
               ],
-              "type": 2
-            }
-          },
-          {
-            "name": "erc20_code",
-            "type": {
-              "displayName": [
-                "Hash"
-              ],
-              "type": 18
+              "type": 4
             }
           }
         ],
@@ -129,7 +120,7 @@
               "displayName": [
                 "Vec"
               ],
-              "type": 19
+              "type": 18
             }
           }
         ],
@@ -259,7 +250,7 @@
               "displayName": [
                 "Vec"
               ],
-              "type": 19
+              "type": 18
             }
           }
         ],
@@ -621,18 +612,9 @@
         },
         {
           "layout": {
-            "struct": {
-              "fields": [
-                {
-                  "layout": {
-                    "cell": {
-                      "key": "0x0500000002000000000000000000000000000000000000000000000000000000",
-                      "ty": 4
-                    }
-                  },
-                  "name": "account_id"
-                }
-              ]
+            "cell": {
+              "key": "0x0500000002000000000000000000000000000000000000000000000000000000",
+              "ty": 4
             }
           },
           "name": "wrapper"
@@ -995,25 +977,8 @@
     },
     {
       "def": {
-        "composite": {
-          "fields": [
-            {
-              "type": 5,
-              "typeName": "[u8; 32]"
-            }
-          ]
-        }
-      },
-      "path": [
-        "ink_env",
-        "types",
-        "Hash"
-      ]
-    },
-    {
-      "def": {
         "sequence": {
-          "type": 20
+          "type": 19
         }
       }
     },

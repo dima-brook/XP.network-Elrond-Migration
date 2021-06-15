@@ -23,7 +23,7 @@ const main = async () => {
 
     console.log('READY TO LISTEN EVENTS!');
 
-    emitEvents(polka, elrd)
+    emitEvents(polka, elrd);
     emitEvents(elrd, polka);
 };
 
