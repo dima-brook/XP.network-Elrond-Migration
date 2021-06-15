@@ -23,7 +23,8 @@ class ValidatorConfig:
 class PolkadotConfig:
     def __init__(self, parser: SectionProxy):
         self.uri: Final = str(parser["NODE_URI"])
-        self.project: Final = abspath(str(parser["FREEZER_PROJECT"]))
+        self.freezer_project: Final = abspath(str(parser["FREEZER_PROJECT"]))
+        self.erc20_project: Final = abspath(str(parser["ERC20_PROJECT"]))
         self.validator: Final = str(parser["VALIDATOR_WORKAROUND"])
 
 

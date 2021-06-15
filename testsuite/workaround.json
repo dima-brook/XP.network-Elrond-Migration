@@ -1,7 +1,7 @@
 {
   "metadataVersion": "0.1.0",
   "source": {
-    "hash": "0xc1be130540c0c1ccba88937ba34a2751aed930256fb3723df1b13b964c09858e",
+    "hash": "0xf59d5ba2cae693da4831b76c6535ae5029f21e24f532dcf4576be02585b78cfc",
     "language": "ink! 3.0.0-rc3",
     "compiler": "rustc 1.54.0-nightly"
   },
@@ -15,16 +15,158 @@
   "spec": {
     "constructors": [
       {
-        "args": [],
+        "args": [
+          {
+            "name": "erc20_addr",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
         "docs": [],
         "name": [
-          "default"
+          "new"
         ],
-        "selector": "0xed4b9d1b"
+        "selector": "0x9bae9d5e"
       }
     ],
     "docs": [],
-    "events": [],
+    "events": [
+      {
+        "args": [
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "to",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          }
+        ],
+        "docs": [
+          " Transfer to elrond chain event",
+          " validators must subscribe to this"
+        ],
+        "name": "Transfer"
+      },
+      {
+        "args": [
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "to",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "endpoint",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "args",
+            "type": {
+              "displayName": [
+                "Vec"
+              ],
+              "type": 18
+            }
+          }
+        ],
+        "docs": [],
+        "name": "ScCall"
+      },
+      {
+        "args": [
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 15
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "to",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "docs": [],
+            "indexed": false,
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          }
+        ],
+        "docs": [],
+        "name": "UnfreezeWrap"
+      }
+    ],
     "messages": [
       {
         "args": [
@@ -49,6 +191,38 @@
         "payable": true,
         "returnType": null,
         "selector": "0xe6faf2c0"
+      },
+      {
+        "args": [
+          {
+            "name": "to",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          }
+        ],
+        "docs": [
+          " Burn erc20 token & emit event"
+        ],
+        "mutates": true,
+        "name": [
+          "withdraw_wrapper"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x8cc357e0"
       },
       {
         "args": [
@@ -190,9 +364,49 @@
         "selector": "0x845f21ef"
       },
       {
+        "args": [
+          {
+            "name": "action_id",
+            "type": {
+              "displayName": [
+                "String"
+              ],
+              "type": 11
+            }
+          },
+          {
+            "name": "to",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          },
+          {
+            "name": "value",
+            "type": {
+              "displayName": [
+                "Balance"
+              ],
+              "type": 15
+            }
+          }
+        ],
+        "docs": [],
+        "mutates": true,
+        "name": [
+          "send_wrapper_verify"
+        ],
+        "payable": false,
+        "returnType": null,
+        "selector": "0x5ea1a574"
+      },
+      {
         "args": [],
         "docs": [
           " Subscribe to events & become a validator",
+          " Placeholder for now",
           " TODO: Proper implementation"
         ],
         "mutates": true,
@@ -224,12 +438,7 @@
       }
     ]
   },
-  "storage": {
-    "struct": {
-      "fields": [
-      ]
-    }
-  },
+  "storage": {},
   "types": [
     {
       "def": {
@@ -455,6 +664,34 @@
     },
     {
       "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "action",
+              "type": 14,
+              "typeName": "Action"
+            },
+            {
+              "name": "validators",
+              "type": 2,
+              "typeName": "u32"
+            }
+          ]
+        }
+      },
+      "path": [
+        "freezer",
+        "freezer",
+        "ActionInfo"
+      ]
+    },
+    {
+      "def": {
+        "primitive": "u128"
+      }
+    },
+    {
+      "def": {
         "primitive": "u128"
       }
     },
@@ -491,6 +728,16 @@
       "path": [
         "Option"
       ]
+    },
+    {
+      "def": {
+		  "primitive": "u64"
+      }
+    },
+    {
+      "def": {
+	    "primitive": "u64"
+      }
     }
   ]
 }
