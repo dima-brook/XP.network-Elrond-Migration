@@ -31,20 +31,6 @@ def setup(config: Config) -> Tuple[PolkadotHelper, ElrondHelper]:
     return polka, elrd
 
 
-def test_runner(polka: PolkadotHelper, elrd: ElrondHelper) -> None:
-    print("""Available Tests:
-1. Liquidity (Polkadot Units -> Elrond)
-2. EGLD (Elrond EGOLD -> Polkadot)""")
-
-    choice = input("Select test: ")
-    if choice == "1":
-        liquidity_test(polka, elrd)
-    elif choice == "2":
-        egld_test(elrd, polka)
-    else:
-        print("Invalid choice!")
-
-
 def main() -> None:
     config = Config()
     polka, elrd = setup(config)
@@ -52,10 +38,17 @@ def main() -> None:
     cont = True
 
     while cont:
-        try:
-            test_runner(polka, elrd)
-        except Exception as e:
-            print("WARN: test failed with exception", e)
+        print("""Available Tests:
+1. Liquidity (Polkadot Units -> Elrond)
+2. EGLD (Elrond EGOLD -> Polkadot)""")
+
+        choice = input("Select test: ")
+        if choice == "1":
+            liquidity_test(polka, elrd)
+        elif choice == "2":
+            egld_test(elrd, polka)
+        else:
+            print("Invalid choice!")
 
         cont = input("Continue?(y/n) ").lower() == "y"
 
