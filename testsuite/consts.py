@@ -6,7 +6,7 @@ VALIDATOR_CONFIG = "{project}/src/config.json"
 # Polkadot Stuff
 ALICE_URI = "//Alice"
 POLKADOT_OUT_DIR = "{project}/target/ink/"
-POLKADOT_FREEZER_ENDOW = 10**15
+POLKADOT_FREEZER_ENDOW = 10**16
 POLKADOT_DEPLOY_GASL = 1000000000000
 FREEZER_SEND_CALL = "send"
 FREEZER_UNFREEZE_CALL = "withdraw_wrapper"
