@@ -13,11 +13,11 @@
 // limitations under the License.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use self::ink_egld::InkEgld;
+pub use self::wrap_token::WrapToken;
 use ink_lang as ink;
 
 #[ink::contract]
-pub mod ink_egld {
+pub mod wrap_token {
     #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::{
         collections::HashMap as StorageHashMap,
@@ -27,7 +27,7 @@ pub mod ink_egld {
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
-    pub struct InkEgld {
+    pub struct WrapToken {
         owner: AccountId,
         /// Total token supply.
         total_supply: Balance,
@@ -73,7 +73,7 @@ pub mod ink_egld {
 
     pub type Result<T> = core::result::Result<T, Error>;
 
-    impl InkEgld {
+    impl WrapToken {
         /// Creates a new ERC-20 contract with the specified initial supply.
         #[ink(constructor)]
         pub fn new(initial_supply: Balance) -> Self {
