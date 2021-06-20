@@ -2,3 +2,6 @@
 	path = freezer
 	url = https://github.com/xp-network/polkadot-freezer
 	branch = master
+[submodule "wrap_token"]
+	path = wrap_token
+	url = https://github.com/xp-network/polkadot-wraptoken
