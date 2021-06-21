@@ -1,6 +1,0 @@
-mypy
-flake8
-erdpy
-requests
-substrate-interface
-stdiomask
