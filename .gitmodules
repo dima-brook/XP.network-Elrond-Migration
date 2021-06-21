@@ -5,3 +5,6 @@
 [submodule "wrap_token"]
 	path = wrap_token
 	url = https://github.com/xp-network/polkadot-wraptoken
+[submodule "testsuite"]
+	path = testsuite
+	url = https://github.com/xp-network/migration-testsuite
