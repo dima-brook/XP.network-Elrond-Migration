@@ -51,15 +51,12 @@ RUN rustup component add rust-src --toolchain nightly
 RUN rustup target add wasm32-unknown-unknown --toolchain stable
 RUN cargo install cargo-contract
 
+WORKDIR /home/runner
+
 # erdpy setup
 RUN wget -O erdpy-up.py https://raw.githubusercontent.com/ElrondNetwork/elrond-sdk-erdpy/master/erdpy-up.py
 RUN python3.9 erdpy-up.py
 ENV PATH="/home/runner/elrondsdk:$PATH"
-
-WORKDIR /home/runner/app
-COPY --chown=runner . /home/runner/app
-
-WORKDIR /home/runner/app/elrond-mint-contract
 
 # I don't know why the shipped erdpy is broken.
 # Use local snapshot
@@ -73,6 +70,12 @@ RUN erdpy config set proxy "http://0.0.0.0:7950"
 RUN erdpy testnet prerequisites
 RUN erdpy testnet clean
 RUN erdpy testnet config
+
+WORKDIR /home/runner/app
+COPY --chown=runner . /home/runner/app
+
+WORKDIR /home/runner/app/elrond-mint-contract
+
 RUN erdpy contract build .
 
 WORKDIR /home/runner/app/freezer
