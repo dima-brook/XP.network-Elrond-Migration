@@ -35,8 +35,7 @@ pub trait Multisig {
 	#[storage_mapper("num_validators")]
 	fn num_validators(&self) -> SingleValueMapper<Self::Storage, usize>;
 
-	/// TODO: Use proper events instead of manual storage
-	/// Action: (Signs, executed, Num Event Received)
+	/// id: Action
 	#[storage_mapper("action_data")]
 	fn action_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
 
@@ -45,9 +44,11 @@ pub trait Multisig {
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
 
+    /// Workaround events
 	#[storage_mapper("events")]
 	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
 
+    /// Identifier of the latest event
 	#[storage_mapper("event_ident")]
 	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
 
@@ -71,6 +72,8 @@ pub trait Multisig {
 		action_mapper.insert(id, info);
 	}
 
+    /// Read an event
+    /// only validators are allowed to call this
 	#[endpoint(eventRead)]
 	fn event_read(&self, id: Self::BigUint) -> SCResult<EventInfo<Self::BigUint>> {
 		let caller_address = self.blockchain().get_caller();
@@ -95,6 +98,7 @@ pub trait Multisig {
 		return Ok(info);
 	}
 
+    /// Contract constructor
 	#[init]
 	fn init(&self, token: TokenIdentifier, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
 		require!(
@@ -121,6 +125,7 @@ pub trait Multisig {
 		Ok(())
 	}
 
+    /// Freeze EGLD and send to Polkadot
 	#[payable("EGLD")]
 	#[endpoint(freezeSend)]
 	fn freeze_send(&self, #[payment] value: Self::BigUint, to: String) -> SCResult<Self::BigUint> {
@@ -131,6 +136,7 @@ pub trait Multisig {
 		Ok(ident)
 	}
 
+    /// Unfreeze polkadot token
 	#[payable("*")]
 	#[endpoint(withdraw)]
 	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<Self::BigUint> {
@@ -144,6 +150,7 @@ pub trait Multisig {
 		Ok(ident)
 	}
 
+    /// Call external smart contract on polkadot
 	#[endpoint(sendScCall)]
 	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) -> Self::BigUint {
 		let ident = self.event_ident().update(|event| {
@@ -170,6 +177,7 @@ pub trait Multisig {
 		}
 	}
 
+    /// Inform that the given action is valid
 	fn validate_action(&self, id: Self::BigUint, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		let caller_address = self.blockchain().get_caller();
 		let caller_id = self.user_mapper().get_user_id(&caller_address);
@@ -265,6 +273,7 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::ChangeMinValid(new_quorum))
 	}
 
+    /// Unfreeze frozen EGLD
 	#[endpoint(validateUnfreeze)]
 	fn validate_unfreeze(
 		&self,
@@ -275,7 +284,7 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::Unfreeze { to, amount })
 	}
 
-	/// Send wrapper tokens
+	/// Send polkadot wrapper tokens to target
 	#[endpoint(validateSendXp)]
 	fn validate_send_xp(
 		&self,
@@ -291,6 +300,7 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::SendXP { to, amount, data })
 	}
 
+    /// Call smart contract on elrond
 	#[payable("EGLD")]
 	#[endpoint(validateSCCall)]
 	fn validate_sc_call(
@@ -312,12 +322,6 @@ pub trait Multisig {
 	}
 
 
-	/// Can be used to:
-	/// - create new user (board member / proposer)
-	/// - remove user (board member / proposer)
-	/// - reactivate removed user
-	/// - convert between board member and proposer
-	/// Will keep the board size and proposer count in sync.
 	fn change_user_role(&self, user_address: Address, new_role: UserRole) {
 		let user_id = self.user_mapper().get_or_create_user(&user_address);
 		let old_role = if user_id == 0 {
@@ -340,6 +344,7 @@ pub trait Multisig {
 		}
 	}
 
+    /// Actual logic for executing an action
 	fn perform_action(&self, action: Action<Self::BigUint>) -> SCResult<PerformActionResult<Self::SendApi>> {
 		match action {
 			Action::Nothing => Ok(PerformActionResult::Done),
