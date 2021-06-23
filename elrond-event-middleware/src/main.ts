@@ -1,7 +1,7 @@
 import express from 'express';
 import * as socket from './socket';
 
-const port = 8000;
+const port = 6644;
 
 const app = express();
 const io = socket.socketMain();
