@@ -14,7 +14,7 @@ Note that the default `SENDER_PEM` is a public wallet.
 
 ## Docker Test Environment
 
-WARN: the current Dockerfile is not up-to-date for bridge-test-ui
+WARN: the current Dockerfile is not up-to-date for bridge-test-ui, checkout to `001fccfa11d7fd100916410520cd2a3b0ec085c8` for command line based test utility
 
 WARN: The current docker image uses a local copy of erdpy due to testnet issues.
 We are investigating the issue with the remote distribution.
@@ -46,30 +46,38 @@ cd ../testsuite
 
 ## Manual Testing with testsuite
 
-## Prerequisites
+### Prerequisites
 
 - [substrate](https://substrate.dev/docs/en/knowledgebase/getting-started/)
 - [ink-cli](https://substrate.dev/substrate-contracts-workshop/#/0/setup)
-- [elrond environment](https://docs.elrond.com/developers/tutorials/counter/)
+- [elrond environment](https://docs.elrond.com/sdk-and-tools/erdpy/installing-erdpy/)
 - [node.js](https://nodejs.org/en/)
 - [yarn](https://yarnpkg.com/getting-started/install)
 - [python-3.9](https://www.python.org/downloads/)
 
-## Substrate Setup
+### Substrate Setup
 - Run a local substrate node supporting contracts pallet (Our [substrate node](https://github.com/xp-network/vm_hub_pallet/tree/main) for example!): `./target/release/node-template --dev`
 
-## Elrond Setup
+### Elrond Setup
 - Run a local node & proxy (or use elrond's public testnet proxy)
 
-## Validator Setup
+#### Event Middleware
+- Since proper event emission for contracts in elrond hasn't been added, you must start our [Elrond Event Middleware](./elrond-event-middleware) with
+
+```
+yarn install
+yarn run dev
+```
+
+### Validator Setup
 - `yarn install`
 
-## Bridge-UI setup
+### Bridge-UI setup
 
 Bridge UI is available [here](https://github.com/xp-network/bridge-test-ui/)
 You must use a server ([VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer), nginx, etc) to serve the static files
 
-## Running
+### Running
 
 Using `venv` is recommended.
 
