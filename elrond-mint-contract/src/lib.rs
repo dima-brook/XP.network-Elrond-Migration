@@ -65,13 +65,6 @@ pub trait Multisig {
 		ident
 	}
 
-	fn set_executed(&self, id: Self::BigUint) {
-		let mut action_mapper = self.action_mapper();
-		let mut info = action_mapper.get(&id).unwrap();
-		info.executed = true;
-		action_mapper.insert(id, info);
-	}
-
     /// Read an event
     /// only validators are allowed to call this
 	#[endpoint(eventRead)]
@@ -193,7 +186,7 @@ pub trait Multisig {
 		let ac = action.clone();
 		action_mapper
 			.entry(id.clone())
-			.or_insert_with(|| ActionInfo::new(ac, Vec::with_capacity(self.num_validators().get()), false, 0))
+			.or_insert_with(|| ActionInfo::new(ac, Vec::with_capacity(self.num_validators().get()), 0))
 			.update(|ActionInfo { signers, .. }| {
 				if signers.contains(&caller_id) {
 					ret = true;
@@ -212,46 +205,12 @@ pub trait Multisig {
 
 		if valid_signers_count == min_valid {
 			let res = self.perform_action(action);
-			self.set_executed(id);
+            action_mapper.remove(&id).unwrap();
 
-			return if let Err(e) = res {
-				Err(e)
-			} else {
-				res
-			};
+            return res;
 		}
 	
 		Ok(PerformActionResult::Pending)
-	}
-
-	/// Check if an action was completed
-	/// Only validators can call this
-	#[endpoint(executedCheck)]
-	fn executed_check_event(&self, id: Self::BigUint) -> SCResult<bool> {
-		let caller_address = self.blockchain().get_caller();
-		let caller_id = self.user_mapper().get_user_id(&caller_address);
-		let caller_role = self.get_user_id_to_role(caller_id);
-		require!(caller_role.can_sign(), "only validators can check events");
-
-		let mut action_mapper = self.action_mapper();
-		let info = action_mapper.get(&id);
-		if info.is_none() {
-			return sc_error!("");
-		}
-
-		let mut info = info.unwrap();
-		if !info.executed {
-			return Ok(false);
-		}
-
-		info.event_recv_cnt += 1;
-		if info.event_recv_cnt == self.num_validators().get() {
-			action_mapper.remove(&id).unwrap();
-		} else {
-			action_mapper.insert(id, info).unwrap();
-		}
-
-		return Ok(true);
 	}
 
 	/// Initiates board member addition process.
