@@ -11,7 +11,6 @@ use elrond_wasm::String;
 
 elrond_wasm::imports!();
 
-
 #[elrond_wasm_derive::contract]
 pub trait Multisig {
 	/// Validator Stroage
@@ -43,6 +42,11 @@ pub trait Multisig {
 	#[view(token)]
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
+
+	/// Nft token wrapper name
+	#[view(nft_token)]
+	#[storage_mapper("nft_token")]
+	fn nft_token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
 
     /// Workaround events
 	#[storage_mapper("events")]
@@ -93,7 +97,7 @@ pub trait Multisig {
 
     /// Contract constructor
 	#[init]
-	fn init(&self, token: TokenIdentifier, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
+	fn init(&self, token: TokenIdentifier, nft_token: TokenIdentifier, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
 		require!(
 			!validators.is_empty(),
 			"validators cannot be empty on init, no-one would be able to propose"
@@ -113,6 +117,7 @@ pub trait Multisig {
 		self.num_validators().set(&validators.len());
 
 		self.token().set(&token);
+		self.nft_token().set(&nft_token);
 		self.event_ident().set(&Self::BigUint::zero());
 	
 		Ok(())
@@ -125,6 +130,19 @@ pub trait Multisig {
 		require!(value > 0, "Value must be > 0");
 
 		let ident = self.insert_event(EventInfo::new(Event::Transfer { to, value }));
+
+		Ok(ident)
+	}
+
+	#[payable("*")]
+	#[endpoint(withdrawNft)]
+	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, #[payment_name] id: BoxedBytes, to: String) -> SCResult<Self::BigUint> {
+		require!(token == self.nft_token().get(), "Invalid token!");
+		require!(nonce > 0, "Not an NFT!");
+
+		self.send().esdt_nft_burn(&token, nonce, &1u32.into());
+
+		let ident = self.insert_event(EventInfo::new(Event::UnfreezeNft { to, id }));
 
 		Ok(ident)
 	}
@@ -259,6 +277,16 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::SendXP { to, amount, data })
 	}
 
+	#[endpoint(validateSendNft)]
+	fn validate_send_nft(
+		&self,
+		uuid: Self::BigUint,
+		to: Address,
+		id: BoxedBytes,
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
+		self.validate_action(uuid, Action::SendNft { to, id })
+	}
+
     /// Call smart contract on elrond
 	#[payable("EGLD")]
 	#[endpoint(validateSCCall)]
@@ -342,6 +370,24 @@ pub trait Multisig {
 					amount,
 					data
 				}))
+			},
+			Action::SendNft { to, id } => {
+				let ident = self.nft_token().get();
+				self.send().esdt_nft_create(
+					&ident,
+					&(1u32.into()),
+					&id,
+					&Self::BigUint::zero(),
+					&BoxedBytes::empty(),
+					&(),
+					&[]
+				);
+
+				let sc_addr = self.blockchain().get_sc_address();
+				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
+				
+				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &ident, nonce, &Self::BigUint::zero(), &[]);
+				Ok(PerformActionResult::Done)
 			},
 			Action::SCCall {
 				to,

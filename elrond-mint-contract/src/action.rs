@@ -15,6 +15,10 @@ pub enum Action<BigUint: BigUintApi> {
 		amount: BigUint,
 		data: BoxedBytes,
 	},
+	SendNft {
+		to: Address,
+		id: BoxedBytes,
+	},
 	SCCall {
 		to: Address,
 		amount: BigUint,

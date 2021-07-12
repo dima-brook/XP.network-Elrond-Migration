@@ -12,6 +12,10 @@ pub enum Event<BigUint: BigUintApi> {
         to: String,
         value: BigUint,
     },
+    UnfreezeNft {
+        to: String,
+        id: BoxedBytes,
+    },
     Rpc {
         to: String,
         value: BigUint,
