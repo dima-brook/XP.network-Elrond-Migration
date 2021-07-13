@@ -136,9 +136,12 @@ pub trait Multisig {
 
 	#[payable("*")]
 	#[endpoint(withdrawNft)]
-	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, #[payment_name] id: BoxedBytes, to: String) -> SCResult<Self::BigUint> {
+	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
 		require!(token == self.nft_token().get(), "Invalid token!");
 		require!(nonce > 0, "Not an NFT!");
+
+        let sc_addr = self.blockchain().get_sc_address();
+        let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).name;
 
 		self.send().esdt_nft_burn(&token, nonce, &1u32.into());
 
@@ -380,13 +383,13 @@ pub trait Multisig {
 					&Self::BigUint::zero(),
 					&BoxedBytes::empty(),
 					&(),
-					&[]
+					&[BoxedBytes::empty()]
 				);
 
 				let sc_addr = self.blockchain().get_sc_address();
 				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
-				
-				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &ident, nonce, &Self::BigUint::zero(), &[]);
+
+				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &ident, nonce, &1u32.into(), &[]);
 				Ok(PerformActionResult::Done)
 			},
 			Action::SCCall {

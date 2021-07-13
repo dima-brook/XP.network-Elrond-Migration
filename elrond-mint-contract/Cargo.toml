@@ -14,27 +14,27 @@ default = [ "elrond-wasm-module-users-default",]
 
 [dependencies.elrond-wasm-module-users-wasm]
 package = "elrond-wasm-module-users"
-version = "0.17.0"
+version = "0.17.4"
 features = [ "wasm-output-mode",]
 optional = true
 
 [dependencies.elrond-wasm-module-users-default]
 package = "elrond-wasm-module-users"
-version = "0.17.0"
+version = "0.17.4"
 optional = true
 
 [dependencies.elrond-wasm]
-version = "0.17.0"
+version = "0.17.4"
 
 [dependencies.elrond-wasm-derive]
-version = "0.17.0"
+version = "0.17.4"
 
 [dependencies.elrond-codec]
 version = "0.5.3"
 
 [dependencies.elrond-wasm-node]
-version = "0.17.0"
+version = "0.17.4"
 optional = true
 
 [dev-dependencies.elrond-wasm-debug]
-version = "0.17.0"
+version = "0.17.4"
