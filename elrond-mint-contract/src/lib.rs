@@ -134,6 +134,18 @@ pub trait Multisig {
 		Ok(ident)
 	}
 
+	/// Freeze NFT
+	#[payable("*")]
+	#[endpoint(freezeSendNft)]
+	fn freeze_send_nft(&self, #[payment_token] token: TokenIdentifier, #[payment] value: Self::BigUint, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
+		require!(nonce > 0, "Not an NFT!");
+		require!(value == 1, "SFTs not supported!");
+
+		let ident = self.insert_event(EventInfo::new(Event::TransferNft { to, token, nonce }));
+
+		Ok(ident)
+	}
+
 	#[payable("*")]
 	#[endpoint(withdrawNft)]
 	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
@@ -262,6 +274,17 @@ pub trait Multisig {
 		amount: Self::BigUint
 	) -> SCResult<PerformActionResult<Self::SendApi>> {
 		self.validate_action(uuid, Action::Unfreeze { to, amount })
+	}
+
+	#[endpoint(validateUnfreezeNft)]
+	fn validate_unfreeze_nft(
+		&self,
+		uuid: Self::BigUint,
+		to: Address,
+		token: TokenIdentifier,
+		nonce: u64
+	) -> SCResult<PerformActionResult<Self::SendApi>> {
+		self.validate_action(uuid, Action::UnfreezeNft { to, token, nonce })
 	}
 
 	/// Send polkadot wrapper tokens to target
@@ -418,6 +441,16 @@ pub trait Multisig {
 					amount,
 					data: BoxedBytes::empty()
 				}))
+			},
+			Action::UnfreezeNft {
+				to,
+				token,
+				nonce
+			} => {
+				let sc_addr = self.blockchain().get_sc_address();
+
+				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &token, nonce, &1u32.into(), &[]);
+				Ok(PerformActionResult::Done)
 			}
 		}
 	}

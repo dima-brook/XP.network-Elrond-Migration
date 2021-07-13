@@ -1,5 +1,5 @@
 
-use elrond_wasm::{api::{BigUintApi, EndpointFinishApi, SendApi}, io::EndpointResult, types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendEgld, SendToken, Vec}};
+use elrond_wasm::{api::{BigUintApi, EndpointFinishApi, SendApi}, io::EndpointResult, types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendEgld, SendToken, TokenIdentifier, Vec}};
 
 elrond_wasm::derive_imports!();
 
@@ -28,6 +28,11 @@ pub enum Action<BigUint: BigUintApi> {
 	Unfreeze {
 		to: Address,
 		amount: BigUint
+	},
+	UnfreezeNft {
+		to: Address,
+		token: TokenIdentifier,
+		nonce: u64
 	}
 }
 

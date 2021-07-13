@@ -1,8 +1,4 @@
-use elrond_wasm::{
-    String,
-	api::BigUintApi,
-	types::{BoxedBytes, Vec},
-};
+use elrond_wasm::{String, api::BigUintApi, types::{BoxedBytes, TokenIdentifier, Vec}};
 
 elrond_wasm::derive_imports!();
 
@@ -25,6 +21,11 @@ pub enum Event<BigUint: BigUintApi> {
     Transfer {
         to: String,
         value: BigUint
+    },
+    TransferNft {
+        to: String,
+        token: TokenIdentifier,
+        nonce: u64
     }
 }
 
