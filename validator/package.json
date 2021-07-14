@@ -23,7 +23,7 @@
     "@polkadot/types": "^3.11.1",
     "bignumber.js": "^9.0.1",
     "socket.io-client": "^4.1.2",
-    "validator": "git+https://github.com/xp-network/migration-validator#master",
+    "validator": "git+https://github.com/xp-network/Migration-validator#master",
     "yargs": "^17.0.1"
   },
   "devDependencies": {

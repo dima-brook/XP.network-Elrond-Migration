@@ -16,7 +16,6 @@ const main = async () => {
     const elrd = await ElrondHelper.new(
         config.elrond_node,
         private_key,
-        config.elrond_sender,
         config.elrond_minter,
         io(config.elrond_ev_socket)
     );
