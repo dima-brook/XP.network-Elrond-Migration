@@ -1,11 +1,10 @@
 #![no_std]
 
 mod action;
-mod events;
 mod user_role;
 
 use action::{Action, ActionInfo, PerformActionResult};
-use events::*;
+
 use user_role::UserRole;
 use elrond_wasm::String;
 
@@ -48,53 +47,6 @@ pub trait Multisig {
 	#[storage_mapper("nft_token")]
 	fn nft_token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
 
-    /// Workaround events
-	#[storage_mapper("events")]
-	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
-
-    /// Identifier of the latest event
-	#[storage_mapper("event_ident")]
-	fn event_ident(&self) -> SingleValueMapper<Self::Storage, Self::BigUint>;
-
-	fn event_ident_inc(&self) -> Self::BigUint {
-		self.event_ident().update(|event| {
-			event.add_assign(Self::BigUint::from(1u64));
-			event.clone()
-		})
-	}
-
-	fn insert_event(&self, event: EventInfo<Self::BigUint>) -> Self::BigUint {
-		let ident = self.event_ident_inc();
-		self.event_mapper().insert(ident.clone(), event);
-		ident
-	}
-
-    /// Read an event
-    /// only validators are allowed to call this
-	#[endpoint(eventRead)]
-	fn event_read(&self, id: Self::BigUint) -> SCResult<EventInfo<Self::BigUint>> {
-		let caller_address = self.blockchain().get_caller();
-		let caller_id = self.user_mapper().get_user_id(&caller_address);
-		let caller_role = self.get_user_id_to_role(caller_id);
-		require!(caller_role.can_sign(), "only validators can check events");
-
-		let mut event_mapper = self.event_mapper();
-		let info = event_mapper.get(&id);
-		if info.is_none() {
-			return sc_error!("Invalid ID!");
-		}
-		let mut info = info.unwrap();
-
-		info.read_cnt += 1;
-		if info.read_cnt == self.num_validators().get() {
-			event_mapper.remove(&id).unwrap();
-		} else {
-			event_mapper.insert(id, info.clone()).unwrap();
-		}
-
-		return Ok(info);
-	}
-
     /// Contract constructor
 	#[init]
 	fn init(&self, token: TokenIdentifier, nft_token: TokenIdentifier, min_valid: usize, #[var_args] validators: VarArgs<Address>) -> SCResult<()> {
@@ -118,7 +70,6 @@ pub trait Multisig {
 
 		self.token().set(&token);
 		self.nft_token().set(&nft_token);
-		self.event_ident().set(&Self::BigUint::zero());
 	
 		Ok(())
 	}
@@ -126,66 +77,60 @@ pub trait Multisig {
     /// Freeze EGLD and send to Polkadot
 	#[payable("EGLD")]
 	#[endpoint(freezeSend)]
-	fn freeze_send(&self, #[payment] value: Self::BigUint, to: String) -> SCResult<Self::BigUint> {
+	fn freeze_send(&self, #[payment] value: Self::BigUint, to: String) -> SCResult<()> {
 		require!(value > 0, "Value must be > 0");
 
-		let ident = self.insert_event(EventInfo::new(Event::Transfer { to, value }));
+		self.transfer_event(to, value);
 
-		Ok(ident)
+		Ok(())
 	}
 
 	/// Freeze NFT
 	#[payable("*")]
 	#[endpoint(freezeSendNft)]
-	fn freeze_send_nft(&self, #[payment_token] token: TokenIdentifier, #[payment] value: Self::BigUint, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
+	fn freeze_send_nft(&self, #[payment_token] token: TokenIdentifier, #[payment] value: Self::BigUint, #[payment_nonce] nonce: u64, to: String) -> SCResult<()> {
 		require!(nonce > 0, "Not an NFT!");
 		require!(value == 1, "SFTs not supported!");
 
-		let ident = self.insert_event(EventInfo::new(Event::TransferNft { to, token, nonce }));
+		self.transfer_nft_event(to, token, nonce);
 
-		Ok(ident)
+		Ok(())
 	}
 
 	#[payable("*")]
 	#[endpoint(withdrawNft)]
-	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
+	fn withdraw_nft(&self, #[payment_token] token: TokenIdentifier, #[payment_nonce] nonce: u64, to: String) -> SCResult<()> {
 		require!(token == self.nft_token().get(), "Invalid token!");
 		require!(nonce > 0, "Not an NFT!");
 
         let sc_addr = self.blockchain().get_sc_address();
         let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).name;
 
-		self.send().esdt_nft_burn(&token, nonce, &1u32.into());
+		self.send().esdt_local_burn(&token, nonce, &1u32.into());
 
-		let ident = self.insert_event(EventInfo::new(Event::UnfreezeNft { to, id }));
+		self.unfreeze_nft_event(to, id);
 
-		Ok(ident)
+		Ok(())
 	}
 
     /// Unfreeze polkadot token
 	#[payable("*")]
 	#[endpoint(withdraw)]
-	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<Self::BigUint> {
+	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<()> {
 		require!(value > 0, "Value must be > 0");
 		require!(token == self.token().get(), "Invalid token!");
 
 		self.send().esdt_local_burn(&token, &value);
 
-		let ident = self.insert_event(EventInfo::new(Event::Unfreeze { to, value }));
-	
-		Ok(ident)
+		self.unfreeze_event(to, value);
+
+		Ok(())
 	}
 
     /// Call external smart contract on polkadot
 	#[endpoint(sendScCall)]
-	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) -> Self::BigUint {
-		let ident = self.event_ident().update(|event| {
-			event.add_assign(Self::BigUint::from(1u64));
-			event.clone()
-		});
-		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Rpc { to, value: Self::BigUint::zero(), endpoint, args: args.into_vec() }));
-
-		ident
+	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) {
+		self.rpc_event(to, Self::BigUint::zero(), endpoint, args.into_vec());
 	}
 
 	#[payable("*")]
@@ -388,7 +333,7 @@ pub trait Multisig {
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(&token, &amount);
+				self.send().esdt_local_mint(&token, 0, &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
@@ -412,7 +357,7 @@ pub trait Multisig {
 				let sc_addr = self.blockchain().get_sc_address();
 				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
 
-				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &ident, nonce, &1u32.into(), &[]);
+				self.send().transfer_esdt_via_async_call(&to, &ident, nonce, &1u32.into(), &[]);
 				Ok(PerformActionResult::Done)
 			},
 			Action::SCCall {
@@ -449,9 +394,48 @@ pub trait Multisig {
 			} => {
 				let sc_addr = self.blockchain().get_sc_address();
 
-				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &token, nonce, &1u32.into(), &[]);
+				self.send().transfer_esdt_via_async_call(&to, &token, nonce, &1u32.into(), &[]);
 				Ok(PerformActionResult::Done)
 			}
 		}
 	}
+
+	// Events
+	#[event("Unfreeze")]
+	fn unfreeze_event(
+		&self,
+		#[indexed] to: String,
+		#[indexed] value: Self::BigUint
+	);
+
+	#[event("UnfreezeNft")]
+	fn unfreeze_nft_event(
+		&self,
+		#[indexed] to: String,
+		#[indexed] id: BoxedBytes
+	);
+
+	#[event("Rpc")]
+	fn rpc_event(
+		&self,
+		#[indexed] to: String,
+		#[indexed] value: Self::BigUint,
+		#[indexed] endpoint: String,
+		#[indexed] args: Vec<BoxedBytes>
+	);
+
+	#[event("Transfer")]
+	fn transfer_event(
+		&self,
+		#[indexed] to: String,
+		#[indexed] value: Self::BigUint
+	);
+
+	#[event("TransferNft")]
+	fn transfer_nft_event(
+		&self,
+		#[indexed] to: String,
+		#[indexed] token: TokenIdentifier,
+		#[indexed] nonce: u64
+	);
 }
