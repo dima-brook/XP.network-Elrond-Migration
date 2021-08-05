@@ -153,7 +153,7 @@ pub trait Multisig {
 		require!(nonce > 0, "Not an NFT!");
 
         let sc_addr = self.blockchain().get_sc_address();
-        let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).name;
+        let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).uris.remove(0);
 
 		self.send().esdt_nft_burn(&token, nonce, &1u32.into());
 
@@ -402,11 +402,11 @@ pub trait Multisig {
 				self.send().esdt_nft_create(
 					&ident,
 					&(1u32.into()),
-					&id,
+					&BoxedBytes::empty(),
 					&Self::BigUint::zero(),
 					&BoxedBytes::empty(),
 					&(),
-					&[BoxedBytes::empty()]
+					&[id]
 				);
 
 				let sc_addr = self.blockchain().get_sc_address();
