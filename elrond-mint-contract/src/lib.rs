@@ -36,7 +36,7 @@ pub trait Multisig {
 
 	/// id: Action
 	#[storage_mapper("action_data")]
-	fn action_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
+	fn action_mapper(&self) -> SafeMapMapper<Self::Storage, Self::BigUint, ActionInfo<Self::BigUint>>;
 
 	/// Supported Wrapper Token name
 	#[view(token)]
@@ -50,7 +50,7 @@ pub trait Multisig {
 
     /// Workaround events
 	#[storage_mapper("events")]
-	fn event_mapper(&self) -> MapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
+	fn event_mapper(&self) -> SafeMapMapper<Self::Storage, Self::BigUint, EventInfo<Self::BigUint>>;
 
     /// Identifier of the latest event
 	#[storage_mapper("event_ident")]
@@ -155,7 +155,7 @@ pub trait Multisig {
         let sc_addr = self.blockchain().get_sc_address();
         let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).uris.remove(0);
 
-		self.send().esdt_nft_burn(&token, nonce, &1u32.into());
+		self.send().esdt_local_burn(&token, nonce, &1u32.into());
 
 		let ident = self.insert_event(EventInfo::new(Event::UnfreezeNft { to, id }));
 
@@ -169,7 +169,7 @@ pub trait Multisig {
 		require!(value > 0, "Value must be > 0");
 		require!(token == self.token().get(), "Invalid token!");
 
-		self.send().esdt_local_burn(&token, &value);
+		self.send().esdt_local_burn(&token, 0, &value);
 
 		let ident = self.insert_event(EventInfo::new(Event::Unfreeze { to, value }));
 	
@@ -388,7 +388,7 @@ pub trait Multisig {
 			},
 			Action::SendXP { to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(&token, &amount);
+				self.send().esdt_local_mint(&token, 0, &amount);
 				Ok(PerformActionResult::SendXP(SendToken {
 					api: self.send(),
 					to,
@@ -409,11 +409,10 @@ pub trait Multisig {
 					&[id]
 				);
 
-				let sc_addr = self.blockchain().get_sc_address();
+                let sc_addr = self.blockchain().get_sc_address();
 				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
 
-				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &ident, nonce, &1u32.into(), &[]);
-				Ok(PerformActionResult::Done)
+				self.send().transfer_esdt_via_async_call(&to, &ident, nonce, &1u32.into(), &[]);
 			},
 			Action::SCCall {
 				to,
@@ -447,10 +446,7 @@ pub trait Multisig {
 				token,
 				nonce
 			} => {
-				let sc_addr = self.blockchain().get_sc_address();
-
-				self.send().transfer_esdt_nft_via_async_call(&sc_addr, &to, &token, nonce, &1u32.into(), &[]);
-				Ok(PerformActionResult::Done)
+				self.send().transfer_esdt_via_async_call(&to, &token, nonce, &1u32.into(), &[]);
 			}
 		}
 	}
