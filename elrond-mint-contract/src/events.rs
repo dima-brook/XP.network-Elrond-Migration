@@ -1,28 +1,26 @@
-use elrond_wasm::{String, api::BigUintApi, types::{BoxedBytes, TokenIdentifier, Vec}};
+use elrond_wasm::{String, api::BigUintApi, types::{BoxedBytes, TokenIdentifier}};
 
 elrond_wasm::derive_imports!();
 
 #[derive(Clone, NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
 pub enum Event<BigUint: BigUintApi> {
     Unfreeze {
+        chain_nonce: u64,
         to: String,
         value: BigUint,
     },
     UnfreezeNft {
+        chain_nonce: u64,
         to: String,
         id: BoxedBytes,
     },
-    Rpc {
-        to: String,
-        value: BigUint,
-        endpoint: String,
-        args: Vec<BoxedBytes>,
-    },
     Transfer {
+        chain_nonce: u64,
         to: String,
         value: BigUint
     },
     TransferNft {
+        chain_nonce: u64,
         to: String,
         token: TokenIdentifier,
         nonce: u64

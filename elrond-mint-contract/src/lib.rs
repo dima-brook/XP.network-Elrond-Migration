@@ -123,13 +123,13 @@ pub trait Multisig {
 		Ok(())
 	}
 
-    /// Freeze EGLD and send to Polkadot
+    /// Freeze EGLD and send to chain
 	#[payable("EGLD")]
 	#[endpoint(freezeSend)]
-	fn freeze_send(&self, #[payment] value: Self::BigUint, to: String) -> SCResult<Self::BigUint> {
+	fn freeze_send(&self, #[payment] value: Self::BigUint, chain_nonce: u64, to: String) -> SCResult<Self::BigUint> {
 		require!(value > 0, "Value must be > 0");
 
-		let ident = self.insert_event(EventInfo::new(Event::Transfer { to, value }));
+		let ident = self.insert_event(EventInfo::new(Event::Transfer { chain_nonce, to, value }));
 
 		Ok(ident)
 	}
@@ -137,11 +137,11 @@ pub trait Multisig {
 	/// Freeze NFT
 	#[payable("*")]
 	#[endpoint(freezeSendNft)]
-	fn freeze_send_nft(&self, #[payment_token] token: TokenIdentifier, #[payment] value: Self::BigUint, #[payment_nonce] nonce: u64, to: String) -> SCResult<Self::BigUint> {
+	fn freeze_send_nft(&self, #[payment_token] token: TokenIdentifier, #[payment] value: Self::BigUint, #[payment_nonce] nonce: u64, chain_nonce: u64, to: String) -> SCResult<Self::BigUint> {
 		require!(nonce > 0, "Not an NFT!");
 		require!(value == 1, "SFTs not supported!");
 
-		let ident = self.insert_event(EventInfo::new(Event::TransferNft { to, token, nonce }));
+		let ident = self.insert_event(EventInfo::new(Event::TransferNft { chain_nonce, to, token, nonce }));
 
 		Ok(ident)
 	}
@@ -153,11 +153,13 @@ pub trait Multisig {
 		require!(nonce > 0, "Not an NFT!");
 
         let sc_addr = self.blockchain().get_sc_address();
-        let id = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce).uris.remove(0);
+        let mut dat = self.blockchain().get_esdt_token_data(&sc_addr, &token, nonce);
+        let id = dat.uris.remove(0);
+        let chain_nonce = u64::top_decode(dat.attributes.into_box()).unwrap();
 
 		self.send().esdt_local_burn(&token, nonce, &1u32.into());
 
-		let ident = self.insert_event(EventInfo::new(Event::UnfreezeNft { to, id }));
+		let ident = self.insert_event(EventInfo::new(Event::UnfreezeNft { chain_nonce, to, id }));
 
 		Ok(ident)
 	}
@@ -165,27 +167,15 @@ pub trait Multisig {
     /// Unfreeze polkadot token
 	#[payable("*")]
 	#[endpoint(withdraw)]
-	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, to: String)  -> SCResult<Self::BigUint> {
+	fn withdraw(&self, #[payment] value: Self::BigUint, #[payment_token] token: TokenIdentifier, #[payment_nonce] chain_nonce: u64, to: String)  -> SCResult<Self::BigUint> {
 		require!(value > 0, "Value must be > 0");
 		require!(token == self.token().get(), "Invalid token!");
 
-		self.send().esdt_local_burn(&token, 0, &value);
+		self.send().esdt_local_burn(&token, chain_nonce, &value);
 
-		let ident = self.insert_event(EventInfo::new(Event::Unfreeze { to, value }));
+		let ident = self.insert_event(EventInfo::new(Event::Unfreeze { chain_nonce, to, value }));
 	
 		Ok(ident)
-	}
-
-    /// Call external smart contract on polkadot
-	#[endpoint(sendScCall)]
-	fn send_sc_call(&self, to: String, endpoint: String, #[var_args] args: VarArgs<BoxedBytes>) -> Self::BigUint {
-		let ident = self.event_ident().update(|event| {
-			event.add_assign(Self::BigUint::from(1u64));
-			event.clone()
-		});
-		self.event_mapper().insert(ident.clone(), EventInfo::new(Event::Rpc { to, value: Self::BigUint::zero(), endpoint, args: args.into_vec() }));
-
-		ident
 	}
 
 	#[payable("*")]
@@ -287,11 +277,12 @@ pub trait Multisig {
 		self.validate_action(uuid, Action::UnfreezeNft { to, token, nonce })
 	}
 
-	/// Send polkadot wrapper tokens to target
-	#[endpoint(validateSendXp)]
-	fn validate_send_xp(
+	/// Send wrapper tokens to target
+	#[endpoint(validateSendWrapped)]
+	fn validate_send_wrapped(
 		&self,
 		uuid: Self::BigUint,
+        chain_nonce: u64,
 		to: Address,
 		amount: Self::BigUint,
 		#[var_args] opt_data: OptionalArg<BoxedBytes>,
@@ -300,40 +291,19 @@ pub trait Multisig {
 			OptionalArg::Some(data) => data,
 			OptionalArg::None => BoxedBytes::empty(),
 		};
-		self.validate_action(uuid, Action::SendXP { to, amount, data })
+		self.validate_action(uuid, Action::SendWrapped { chain_nonce, to, amount, data })
 	}
 
 	#[endpoint(validateSendNft)]
 	fn validate_send_nft(
 		&self,
 		uuid: Self::BigUint,
+        chain_nonce: u64,
 		to: Address,
 		id: BoxedBytes,
 	) -> SCResult<PerformActionResult<Self::SendApi>> {
-		self.validate_action(uuid, Action::SendNft { to, id })
+		self.validate_action(uuid, Action::SendNft { chain_nonce, to, id })
 	}
-
-    /// Call smart contract on elrond
-	#[payable("EGLD")]
-	#[endpoint(validateSCCall)]
-	fn validate_sc_call(
-		&self,
-		#[payment] amount: Self::BigUint,
-		uuid: Self::BigUint,
-		to: Address,
-		endpoint: BoxedBytes,
-		#[var_args] args: VarArgs<BoxedBytes>,
-	) -> SCResult<PerformActionResult<Self::SendApi>> {
-		self.validate_action(uuid,
-			Action::SCCall {
-				to,
-				amount,
-				endpoint,
-				args: args.into_vec(),
-			}
-		)
-	}
-
 
 	fn change_user_role(&self, user_address: Address, new_role: UserRole) {
 		let user_id = self.user_mapper().get_or_create_user(&user_address);
@@ -386,18 +356,18 @@ pub trait Multisig {
 				self.min_valid().set(&new_quorum);
 				Ok(PerformActionResult::Done)
 			},
-			Action::SendXP { to, amount, data } => {
+			Action::SendWrapped { chain_nonce, to, amount, data } => {
 				let token = self.token().get();
-				self.send().esdt_local_mint(&token, 0, &amount);
-				Ok(PerformActionResult::SendXP(SendToken {
-					api: self.send(),
-					to,
-					token: token.into(),
-					amount,
-					data
-				}))
+				self.send().esdt_local_mint(&token, chain_nonce, &amount);
+                self.send().transfer_esdt_via_async_call(
+                    &to,
+                    &token,
+                    chain_nonce,
+                    &amount,
+                    data.as_slice()
+                )
 			},
-			Action::SendNft { to, id } => {
+			Action::SendNft { chain_nonce, to, id } => {
 				let ident = self.nft_token().get();
 				self.send().esdt_nft_create(
 					&ident,
@@ -405,7 +375,7 @@ pub trait Multisig {
 					&BoxedBytes::empty(),
 					&Self::BigUint::zero(),
 					&BoxedBytes::empty(),
-					&(),
+					&chain_nonce,
 					&[id]
 				);
 
@@ -413,22 +383,6 @@ pub trait Multisig {
 				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
 
 				self.send().transfer_esdt_via_async_call(&to, &ident, nonce, &1u32.into(), &[]);
-			},
-			Action::SCCall {
-				to,
-				amount,
-				endpoint,
-				args
-			} => {
-				let mut contract_call_raw =
-					ContractCall::<Self::SendApi, ()>::new(self.send(), to, endpoint)
-						.with_token_transfer(TokenIdentifier::egld(), amount);
-				for arg in args {
-					contract_call_raw.push_argument_raw_bytes(arg.as_slice());
-				}
-				Ok(PerformActionResult::AsyncCall(
-					contract_call_raw.async_call(),
-				))
 			},
 			Action::Unfreeze {
 				to,

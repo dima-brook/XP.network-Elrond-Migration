@@ -1,5 +1,4 @@
-
-use elrond_wasm::{api::{BigUintApi, EndpointFinishApi, SendApi}, io::EndpointResult, types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendEgld, SendToken, TokenIdentifier, Vec}};
+use elrond_wasm::{api::{BigUintApi, EndpointFinishApi, SendApi}, io::EndpointResult, types::{Address, AsyncCall, BoxedBytes, OptionalResult, SendEgld, TokenIdentifier, Vec}};
 
 elrond_wasm::derive_imports!();
 
@@ -10,20 +9,16 @@ pub enum Action<BigUint: BigUintApi> {
 	AddValidator(Address),
 	RemoveUser(Address),
 	ChangeMinValid(usize),
-	SendXP {
+	SendWrapped {
+        chain_nonce: u64,
 		to: Address,
 		amount: BigUint,
 		data: BoxedBytes,
 	},
 	SendNft {
+        chain_nonce: u64,
 		to: Address,
 		id: BoxedBytes,
-	},
-	SCCall {
-		to: Address,
-		amount: BigUint,
-		endpoint: BoxedBytes,
-		args: Vec<BoxedBytes>,
 	},
 	Unfreeze {
 		to: Address,
@@ -62,7 +57,6 @@ where
 {
 	Done,
 	Pending,
-	SendXP(SendToken<SA>),
 	AsyncCall(AsyncCall<SA>),
 	Unfreeze(SendEgld<SA>)
 }
@@ -79,7 +73,6 @@ where
 	{
 		match self {
 			PerformActionResult::Done | PerformActionResult::Pending=> (),
-			PerformActionResult::SendXP(send_token) => send_token.finish(api),
 			PerformActionResult::AsyncCall(async_call) => async_call.finish(api),
 			PerformActionResult::Unfreeze(send_egld) => send_egld.finish(api)
 		}
