@@ -8,6 +8,7 @@ use action::{Action, ActionInfo, PerformActionResult};
 use events::*;
 use user_role::UserRole;
 use elrond_wasm::String;
+use core::convert::TryInto;
 
 elrond_wasm::imports!();
 
@@ -42,6 +43,10 @@ pub trait Multisig {
 	#[view(token)]
 	#[storage_mapper("token")]
 	fn token(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
+
+    #[view(prevSftNonce)]
+    #[storage_mapper("sft_nonce")]
+    fn sft_nonce(&self) -> SingleValueMapper<Self::Storage, i64>;
 
 	/// Nft token wrapper name
 	#[view(nft_token)]
@@ -119,6 +124,7 @@ pub trait Multisig {
 		self.token().set(&token);
 		self.nft_token().set(&nft_token);
 		self.event_ident().set(&Self::BigUint::zero());
+        self.sft_nonce().set(&-1);
 	
 		Ok(())
 	}
@@ -357,8 +363,23 @@ pub trait Multisig {
 				Ok(PerformActionResult::Done)
 			},
 			Action::SendWrapped { chain_nonce, to, amount, data } => {
-				let token = self.token().get();
-				self.send().esdt_local_mint(&token, chain_nonce, &amount);
+                let token = self.token().get();
+                let nonce = self.sft_nonce().get();
+                if nonce < chain_nonce.try_into().unwrap() {
+                    self.send().esdt_nft_create(
+                        &token,
+                        &amount,
+                        &BoxedBytes::empty(),
+                        &Self::BigUint::zero(),
+                        &BoxedBytes::empty(),
+                        &BoxedBytes::empty(),
+                        &[]
+                    );
+                    self.sft_nonce().set(&(nonce+1))
+                } else {
+				    self.send().esdt_local_mint(&token, chain_nonce, &amount);
+                }
+
                 self.send().transfer_esdt_via_async_call(
                     &to,
                     &token,
@@ -369,7 +390,7 @@ pub trait Multisig {
 			},
 			Action::SendNft { chain_nonce, to, id } => {
 				let ident = self.nft_token().get();
-				self.send().esdt_nft_create(
+				let nonce = self.send().esdt_nft_create(
 					&ident,
 					&(1u32.into()),
 					&BoxedBytes::empty(),
@@ -378,9 +399,6 @@ pub trait Multisig {
 					&chain_nonce,
 					&[id]
 				);
-
-                let sc_addr = self.blockchain().get_sc_address();
-				let nonce = self.blockchain().get_current_esdt_nft_nonce(&sc_addr, &ident);
 
 				self.send().transfer_esdt_via_async_call(&to, &ident, nonce, &1u32.into(), &[]);
 			},
