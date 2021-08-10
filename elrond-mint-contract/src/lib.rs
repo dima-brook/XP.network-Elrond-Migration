@@ -8,7 +8,6 @@ use action::{Action, ActionInfo, PerformActionResult};
 use events::*;
 use user_role::UserRole;
 use elrond_wasm::String;
-use core::convert::TryInto;
 
 elrond_wasm::imports!();
 
@@ -46,7 +45,7 @@ pub trait Multisig {
 
     #[view(prevSftNonce)]
     #[storage_mapper("sft_nonce")]
-    fn sft_nonce(&self) -> SingleValueMapper<Self::Storage, i64>;
+    fn sft_nonce(&self) -> SingleValueMapper<Self::Storage, u64>;
 
 	/// Nft token wrapper name
 	#[view(nft_token)]
@@ -124,7 +123,7 @@ pub trait Multisig {
 		self.token().set(&token);
 		self.nft_token().set(&nft_token);
 		self.event_ident().set(&Self::BigUint::zero());
-        self.sft_nonce().set(&-1);
+        self.sft_nonce().set(&0);
 	
 		Ok(())
 	}
@@ -365,20 +364,20 @@ pub trait Multisig {
 			Action::SendWrapped { chain_nonce, to, amount, data } => {
                 let token = self.token().get();
                 let nonce = self.sft_nonce().get();
-                if nonce < chain_nonce.try_into().unwrap() {
+                if nonce < chain_nonce {
                     self.send().esdt_nft_create(
                         &token,
-                        &amount,
+                        &(1u32.into()), // This can never be burnt
                         &BoxedBytes::empty(),
                         &Self::BigUint::zero(),
                         &BoxedBytes::empty(),
                         &BoxedBytes::empty(),
-                        &[]
+                        &[BoxedBytes::empty()]
                     );
                     self.sft_nonce().set(&(nonce+1))
-                } else {
-				    self.send().esdt_local_mint(&token, chain_nonce, &amount);
                 }
+
+				self.send().esdt_local_mint(&token, chain_nonce, &amount);
 
                 self.send().transfer_esdt_via_async_call(
                     &to,
