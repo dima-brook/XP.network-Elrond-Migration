@@ -363,18 +363,19 @@ pub trait Multisig {
 			},
 			Action::SendWrapped { chain_nonce, to, amount, data } => {
                 let token = self.token().get();
-                let nonce = self.sft_nonce().get();
-                if nonce < chain_nonce {
+                let mut nonce = self.sft_nonce().get();
+                while nonce < chain_nonce {
                     self.send().esdt_nft_create(
                         &token,
-                        &(1u32.into()), // This can never be burnt
+                        &(2u32.into()), // This can never be burnt
                         &BoxedBytes::empty(),
                         &Self::BigUint::zero(),
                         &BoxedBytes::empty(),
                         &BoxedBytes::empty(),
                         &[BoxedBytes::empty()]
                     );
-                    self.sft_nonce().set(&(nonce+1))
+                    self.sft_nonce().set(&(nonce+1));
+                    nonce += 1;
                 }
 
 				self.send().esdt_local_mint(&token, chain_nonce, &amount);
